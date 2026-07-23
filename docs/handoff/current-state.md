@@ -31,22 +31,21 @@ Planejamento inicial. Nenhum código foi escrito ainda. A modelagem foi concluí
 - Modelo de dados completo aprovado e documentado em
   docs/technical/data-model.md (6 tabelas: User, Guest, Reservation,
   VipPlan, VipItem, AuditLog).
-
+- Modelo de dados completo aprovado e documentado (6 tabelas: User, Guest,
+  Reservation, VipPlan, VipItem, AuditLog) — ver docs/technical/data-model.md.
+- Ambiente Python local funcional (venv + Flask mínimo testado com sucesso).
 
 
 \## O que NÃO existe ainda
 
 \- Repositório Git/GitHub.
-
 \- Estrutura de pastas do código.
-
 \- Aplicação Flask.
-
 \- Banco de dados/modelos.
-
 \- Autenticação.
-
 \- Qualquer tela ou protótipo no Figma Make.
+- Nenhum model SQLAlchemy implementado (próximo passo).
+- Nenhuma migração de banco de dados criada.
 
 
 
