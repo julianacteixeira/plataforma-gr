@@ -51,7 +51,8 @@ do Flask-Migrate para gerenciar alterações futuras no banco.
 \- Trabalhar uma etapa pequena por vez.
 
 \- Explicar o plano antes de codificar.
-- Considerar sempre o que é melhor para a rotina de Guest Relations de resort
+
+* Considerar sempre o que é melhor para a rotina de Guest Relations de resort
 
 \- Listar arquivos a criar/alterar antes de qualquer mudança.
 
@@ -60,4 +61,18 @@ do Flask-Migrate para gerenciar alterações futuras no banco.
 \- Recomendar commit de segurança antes de alterações relevantes.
 
 \- Não mudar stack, arquitetura, identidade visual ou escopo sem aprovação explícita.
+
+## Pendência técnica (não bloqueante)
+
+O PowerShell 5.1 (Windows PowerShell) exibe acentos e caracteres especiais
+
+incorretamente ao usar Get-Content/notepad em arquivos .md via terminal
+
+(mojibake). Os arquivos em si estão corretos (confirmado no GitHub). Causa
+
+provável: limitação de code page do PowerShell 5.1. Solução futura:
+
+migrar para PowerShell 7 (pwsh) como terminal padrão, ou sempre conferir
+
+conteúdo visualmente pelo Notepad/GitHub em vez do console.
 
