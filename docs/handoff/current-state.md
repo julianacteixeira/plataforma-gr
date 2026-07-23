@@ -2,15 +2,13 @@
 
 
 
-\*\*Última atualização:\*\* 2026-07-13
+\*\*Última atualização:\*\* 2026-07-23
 
 
 
 \## Fase atual
 
-Planejamento inicial. Nenhum código foi escrito ainda. Nenhuma estrutura de
-
-pastas de código, repositório Git ou banco de dados foi criada ainda.
+Planejamento inicial. Nenhum código foi escrito ainda. A modelagem foi concluída e a implementação do banco (SQLAlchemy) é o próximo passo.
 
 
 
@@ -29,6 +27,10 @@ pastas de código, repositório Git ou banco de dados foi criada ainda.
 &#x20; Serif, acentos coloridos, cards em camadas) — ainda não aplicada em
 
 &#x20; nenhuma tela, pois nenhuma tela foi criada.
+
+- Modelo de dados completo aprovado e documentado em
+  docs/technical/data-model.md (6 tabelas: User, Guest, Reservation,
+  VipPlan, VipItem, AuditLog).
 
 
 

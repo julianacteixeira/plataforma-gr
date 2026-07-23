@@ -4,41 +4,45 @@
 
 \## Próxima etapa a executar
 
-Criar a estrutura de pastas do projeto e configurar o repositório Git/GitHub privado, seguindo o plano que será apresentado e aprovado antes da execução (nenhuma mudança ampla sem plano prévio).
+Implementar o modelo de dados aprovado (docs/technical/data-model.md)
+
+como models SQLAlchemy dentro da aplicação Flask, seguido da configuração
+
+do Flask-Migrate para gerenciar alterações futuras no banco.
 
 
 
 \## Etapas seguintes previstas (nesta ordem)
 
-1\. Estrutura de pastas do projeto + Git/GitHub privado.
+. Estrutura de pastas do projeto + Git/GitHub privado.
 
-2\. Ambiente Python local (instalação, ambiente virtual, Flask "hello world"
+. Ambiente Python local (instalação, ambiente virtual, Flask "hello world"
 
 &#x20;  mínimo, sem lógica de negócio).
 
-3\. Modelagem do banco de dados (hóspedes, reservas, categorias VIP,
+. Modelagem do banco de dados (hóspedes, reservas, categorias VIP,
 
 &#x20;  planejamentos de vipagem, itens, usuários, log de auditoria).
 
-4\. Configuração de migrações (Flask-Migrate).
+1\. Configuração de migrações (Flask-Migrate).
 
-5\. Autenticação de usuários (Flask-Login).
+2\. Autenticação de usuários (Flask-Login).
 
-6\. Importação manual de reservas + consulta de reservas/hóspedes.
+3\. Importação manual de reservas + consulta de reservas/hóspedes.
 
-7\. Marcar VIP + categoria VIP.
+4\. Marcar VIP + categoria VIP.
 
-8\. Planejamento de vipagem + itens (custo, responsável, status).
+5\. Planejamento de vipagem + itens (custo, responsável, status).
 
-9\. Histórico e auditoria de alterações.
+6\. Histórico e auditoria de alterações.
 
-10\. Exportação de relatório em XLSX.
+7\. Exportação de relatório em XLSX.
 
-11\. Aplicação da identidade visual editorial.
+8\. Aplicação da identidade visual editorial.
 
-12\. Pós-MVP (estoque, prevenção de duplicidade, relatórios avançados).
+9\. Pós-MVP (estoque, prevenção de duplicidade, relatórios avançados).
 
-13\. Integração futura isolada com Opera Cloud.
+10\. Integração futura isolada com Opera Cloud.
 
 
 
@@ -47,6 +51,7 @@ Criar a estrutura de pastas do projeto e configurar o repositório Git/GitHub pr
 \- Trabalhar uma etapa pequena por vez.
 
 \- Explicar o plano antes de codificar.
+- Considerar sempre o que é melhor para a rotina de Guest Relations de resort
 
 \- Listar arquivos a criar/alterar antes de qualquer mudança.
 

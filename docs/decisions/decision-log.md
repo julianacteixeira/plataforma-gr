@@ -163,6 +163,37 @@ descartada pelo risco de conflito com Git).
 \---
 
 
+## 2026-07-23 — Modelo de dados do MVP aprovado
+**Decisão:** Aprovado o modelo de dados com 6 tabelas: User, Guest,
+Reservation, VipPlan, VipItem, AuditLog. Reserva pode ter múltiplos
+VipPlans (um por dia/ocasião). VipItem editável individualmente
+(descrição, custo, disponibilidade); confirmação de entrega ocorre no
+nível do VipPlan (conjunto), não por item. Guest inclui campos opcionais
+de programa ALL (all_member, all_card_number, pmid). VipPlan inclui
+room_number_override para os casos raros de troca de quarto durante a
+estadia. Ver docs/technical/data-model.md para detalhes completos.
+**Contexto:** Planejamento conjunto na Etapa 4, revisando cenários reais
+de operação de Guest Relations.
+**Status:** Aprovado.
+
+## 2026-07-23 — Auditoria: log manual explícito (Opção A)
+**Decisão:** AuditLog será alimentado manualmente e explicitamente pelo
+código (cada função que altera VipPlan/VipItem também grava uma entrada),
+em vez de captura automática via eventos do banco.
+**Contexto:** Mais didático e depurável para fase de aprendizado; possível
+migrar para captura automática no pós-MVP.
+**Status:** Aprovado.
+
+## 2026-07-23 — Valores de status controlado ficam abertos por ora
+**Decisão:** Os valores exatos de campos como role, vip_category, source,
+VipPlan.status, delivery_status, availability_status e AuditLog.action
+não foram fechados nesta etapa; serão definidos durante a implementação,
+quando for possível visualizar as telas reais.
+**Contexto:** Preferência da usuária por refinar esses valores com
+contexto visual, evitando retrabalho por decisão prematura.
+**Status:** Aprovado.
+
+
 
 \## Pendentes (a decidir em etapas futuras)
 
