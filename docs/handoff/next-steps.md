@@ -4,9 +4,11 @@
 
 \## Próxima etapa a executar
 
-Implementar o modelo de dados aprovado (docs/technical/data-model.md) como models SQLAlchemy dentro da aplicação Flask, seguido da configuração do Flask-Migrate. Começar pela estrutura de pastas da aplicação (organização em módulos), depois models simples (User, Guest) antes dos mais complexos.
+Implementar os models restantes (Reservation, VipPlan, VipItem, AuditLog),
 
+incluindo os relacionamentos (chaves estrangeiras) entre eles e com User/
 
+Guest, seguido de nova migração.
 
 
 

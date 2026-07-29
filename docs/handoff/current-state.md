@@ -35,6 +35,13 @@ Planejamento inicial. Nenhum código foi escrito ainda. A modelagem foi concluí
   Reservation, VipPlan, VipItem, AuditLog) — ver docs/technical/data-model.md.
 - Ambiente Python local funcional (venv + Flask mínimo testado com sucesso).
 
+- Aplicação Flask reestruturada em pacote (app/), com application factory
+  (create_app()).
+- SQLAlchemy e Flask-Migrate configurados e funcionando.
+- Models implementados: User, Guest.
+- Primeira migração aplicada; banco SQLite local funcional
+  (instance/plataforma_gr.db, fora do controle de versão).
+
 
 \## O que NÃO existe ainda
 
