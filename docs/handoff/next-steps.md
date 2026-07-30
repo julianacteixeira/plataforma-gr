@@ -4,44 +4,63 @@
 
 \## Próxima etapa a executar
 
-Implementar o model AuditLog em app/models/audit_log.py, seguindo o mesmo
-padrão dos anteriores (um arquivo por tabela, registrado em
-app/models/__init__.py), e gerar/aplicar a migração correspondente. É o
-último model do desenho de banco do MVP.
+Testar manualmente se os listeners do AuditLog realmente funcionam. Eles
+foram implementados em app/models/audit_log.py (before_update e
+before_delete, levantando RuntimeError), mas **nunca foram testados** —
+só escritos. Enquanto não houver teste, não se pode afirmar que a
+imutabilidade do log está garantida.
 
-Campos previstos em docs/technical/data-model.md: user_id (FK -> User),
-entity_type, entity_id, action, details, timestamp.
+O teste exige criar dados de apoio, porque audit_logs.user_id é uma FK
+obrigatória para users.id e o banco está vazio. Roteiro sugerido, no
+shell do Flask, sempre com dados fictícios (nunca dados reais de
+hóspede):
 
-Antes de codificar, decidir (e registrar no decision-log.md) os pontos
-ainda em aberto: os valores aceitos de `action`, a obrigatoriedade de cada
-campo, o tamanho de `details`, e se `entity_id` terá chave estrangeira
-real ou não — do mesmo modo como foi feito para Reservation, VipPlan e
-VipItem nas entradas de 2026-07-30.
+1. Criar um User de teste e uma entrada de AuditLog ligada a ele.
+2. Tentar alterar um campo dessa entrada e chamar db.session.commit() —
+   deve levantar RuntimeError("Entradas de AuditLog não podem ser
+   alteradas.").
+3. Rodar db.session.rollback() (necessário: o commit interrompido deixa a
+   sessão em estado inconsistente).
+4. Tentar db.session.delete(entrada) + commit() — deve levantar
+   RuntimeError("Entradas de AuditLog não podem ser apagadas.").
+5. Rodar rollback() de novo e confirmar que a entrada continua no banco.
 
-Ponto importante de modelagem: o AuditLog aponta para registros de
-tabelas diferentes (VipPlan, VipItem, Reservation) através do par
-entity_type + entity_id. Isso significa que `entity_id` normalmente NÃO
-pode ser uma chave estrangeira comum, porque não aponta para uma única
-tabela. Decidir isso explicitamente antes de escrever o model.
+Lembrar que os listeners disparam no flush, não no momento da atribuição
+em Python: o erro aparece no commit(), não na linha que altera o campo.
 
-Lembrar que o log é alimentado manualmente pelo código (Opção A, decisão
-de 2026-07-23): cada função que cria ou altera VipPlan/VipItem também
-grava uma entrada aqui. Não há captura automática por eventos do
-SQLAlchemy nesta fase. Duas decisões recentes dependem disso funcionar:
-a substituição de item (editado no lugar, com rastro no AuditLog) e a
-futura reversão de entrega.
+Se o teste falhar, a decisão de 2026-07-30 sobre imutabilidade do
+AuditLog não está de fato aplicada, e isso precisa ser corrigido antes de
+qualquer tela que escreva no log.
 
-Depois do AuditLog, o desenho de banco do MVP está completo e a frente
-seguinte é autenticação (Flask-Login).
+
+
+\## Depois disso: próxima grande etapa
+
+Com o desenho de banco completo, a próxima grande etapa é começar a
+camada de autenticação (Flask-Login) ou as primeiras rotas/telas. A
+escolha entre as duas fica para decidir na próxima sessão.
+
+Vale considerar que a autenticação vem antes por dependência real: tanto
+VipPlan.created_by_id quanto AuditLog.user_id são obrigatórios e exigem
+saber qual usuário está logado. Sem login, qualquer tela que crie
+planejamento ou grave log precisaria de um usuário fixo improvisado.
+
+Lembrar também que o log é alimentado manualmente pelo código (Opção A,
+decisão de 2026-07-23): cada função que cria ou altera VipPlan/VipItem
+também grava uma entrada no AuditLog. Não há captura automática nesta
+fase, então isso precisa ser escrito à mão em cada rota.
 
 
 
 \## Já concluído nesta frente
 
-- Models User, Guest, Reservation, VipPlan e VipItem implementados, com
-  migrações aplicadas.
-- Tabelas reservations, vip_plans e vip_items criadas e confirmadas no
-  banco local.
+- Desenho de banco do MVP completo: os 6 models implementados (User,
+  Guest, Reservation, VipPlan, VipItem, AuditLog), com migrações
+  aplicadas.
+- As 6 tabelas do MVP confirmadas no banco local: users, guests,
+  reservations, vip_plans, vip_items, audit_logs.
+- Todas as decisões de campos registradas no decision-log.md — uma
+  entrada por model.
 - Campos em aberto de Reservation (source, room_number, reservation_code)
   decididos e registrados no decision-log.md em 2026-07-30.
 - Campos em aberto de VipPlan (obrigatoriedade, não-unicidade de
@@ -51,6 +70,11 @@ seguinte é autenticação (Flask-Login).
   Numeric(10, 2), availability_status como texto livre, substituição por
   edição do registro existente com rastro no AuditLog) decididos e
   registrados no decision-log.md em 2026-07-30.
+- Campos e regras do AuditLog (todos os campos obrigatórios, entity_id sem
+  FK por ser polimórfico, details como Text, action como texto livre,
+  Reservation no escopo de auditoria, imutabilidade via listeners com as
+  duas limitações conhecidas) decididos e registrados no decision-log.md
+  em 2026-07-30.
 
 
 

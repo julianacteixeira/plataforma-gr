@@ -295,6 +295,51 @@ comportamento de "substituição" de um item.
 para Reservation e VipPlan, e não travar regras de negócio (cascata,
 valores de status) que ainda não têm o contexto de tela necessário.
 
+## [2026-07-30] Campos e regras do model AuditLog
+
+**Contexto:** o data-model.md definia a tabela AuditLog com um relacionamento
+polimórfico (entity_type + entity_id), e deixava em aberto a obrigatoriedade
+dos campos, o escopo de entidades auditadas, e a garantia de imutabilidade.
+
+**Decisão:**
+- Todos os sete campos são obrigatórios: `user_id`, `entity_type`,
+  `entity_id`, `action`, `details`, `timestamp`.
+- `entity_id` é um inteiro comum, sem foreign key e sem relationship —
+  relacionamento polimórfico, integridade garantida pelo código da
+  aplicação, não pelo banco.
+- `details` usa o tipo `Text` (sem limite de tamanho), para não truncar
+  descrições de mudança.
+- `action` permanece como texto livre nesta fase, mesmo padrão dos demais
+  campos de status.
+- `entity_type` aceita, desde já, `"Reservation"` como valor válido, além
+  de `"VipPlan"` e `"VipItem"` — alterações em Reservation também geram
+  entrada de log a partir de agora.
+- Entradas de AuditLog nunca são editadas nem apagadas. Essa regra é
+  aplicada tecnicamente via eventos do SQLAlchemy (`before_update` e
+  `before_delete`), que bloqueiam essas operações quando feitas através
+  do código da aplicação. Limitação conhecida: não protege contra acesso
+  direto ao banco por fora da aplicação — proteção completa exigiria
+  configuração no nível do banco de dados, fora do escopo do MVP.
+
+**Alternativas consideradas:**
+- Deixar Reservation fora do escopo do MVP — descartado a pedido do
+  usuário; Reservation entra no escopo de auditoria desde já.
+- Só documentar a regra de imutabilidade sem aplicá-la no código —
+  descartado; a trava técnica foi priorizada mesmo sabendo de sua
+  limitação contra acesso direto ao banco.
+
+**Justificativa geral:** priorizar rastreabilidade forte desde o início,
+mesmo que exija uma técnica nova (eventos do SQLAlchemy) não usada nos
+models anteriores.
+
+Nota adicional: a proteção via listeners (before_update/before_delete) não
+cobre um "flask db downgrade" desta migração, pois um DROP TABLE via
+Alembic opera no nível do schema, sem passar pelos eventos do SQLAlchemy.
+Ou seja, reverter esta migração apaga todo o histórico de auditoria sem
+passar pela trava. Aceitável no MVP (tabela nova, sem dados reais em
+risco); revisitar se algum dia for necessário reverter esta migração com
+dados de produção existentes.
+
 
 
 \## Pendentes (a decidir em etapas futuras)

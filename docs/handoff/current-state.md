@@ -8,10 +8,15 @@
 
 \## Fase atual
 
-Implementação dos models do banco de dados. A modelagem está concluída e
-aprovada; os models estão sendo implementados um a um, cada um com sua
-migração. Já implementados: User, Guest, Reservation, VipPlan e VipItem.
-Falta apenas AuditLog para completar o desenho de banco do MVP.
+Desenho de banco do MVP concluído. Os seis models foram implementados um
+a um, cada um com sua migração aplicada: User, Guest, Reservation,
+VipPlan, VipItem e AuditLog. As 6 tabelas do MVP existem no banco local
+(users, guests, reservations, vip_plans, vip_items, audit_logs) e todas as
+decisões de campos estão registradas em docs/decisions/decision-log.md.
+
+Com o banco desenhado, a próxima grande etapa é começar a camada de
+autenticação (Flask-Login) ou as primeiras rotas/telas — a decidir na
+próxima sessão.
 
 
 
@@ -41,7 +46,8 @@ Falta apenas AuditLog para completar o desenho de banco do MVP.
 - Aplicação Flask reestruturada em pacote (app/), com application factory
   (create_app()).
 - SQLAlchemy e Flask-Migrate configurados e funcionando.
-- Models implementados: User, Guest, Reservation, VipPlan, VipItem.
+- Models implementados: User, Guest, Reservation, VipPlan, VipItem,
+  AuditLog (todos os 6 do MVP).
 - Primeira migração aplicada; banco SQLite local funcional
   (instance/plataforma_gr.db, fora do controle de versão).
 - Model Reservation criado em app/models/reservation.py (FK guest_id ->
@@ -81,16 +87,37 @@ Falta apenas AuditLog para completar o desenho de banco do MVP.
   evitar erro de arredondamento em valor monetário), availability_status
   como texto livre, e substituição de item feita por edição do registro
   existente, com rastreabilidade via entrada manual no AuditLog.
+- Model AuditLog criado em app/models/audit_log.py (FK user_id ->
+  users.id; entity_id é inteiro comum, SEM foreign key e SEM
+  relationship, por ser relacionamento polimórfico — entity_type diz a
+  qual tabela entity_id se refere; details usa Text, sem limite),
+  registrado em app/models/__init__.py.
+- Dois listeners de evento do SQLAlchemy no final de audit_log.py
+  (before_update e before_delete) que levantam RuntimeError, impedindo
+  que entradas de log sejam alteradas ou apagadas através do código da
+  aplicação. IMPLEMENTADO MAS AINDA NÃO TESTADO — ver próximo passo em
+  docs/handoff/next-steps.md.
+- Migração "Cria tabela de audit log" (bd1651bb9ab7) gerada e aplicada
+  com sucesso; a tabela audit_logs existe no banco (confirmado via
+  inspect: tabelas atuais = alembic_version, audit_logs, guests,
+  reservations, users, vip_items, vip_plans).
+- Decisões sobre os campos e regras do AuditLog registradas em
+  docs/decisions/decision-log.md, entrada de 2026-07-30: todos os campos
+  obrigatórios, entity_id sem FK, details como Text, action como texto
+  livre, Reservation incluída no escopo de auditoria, e imutabilidade das
+  entradas aplicada via listeners — com as duas limitações conhecidas
+  registradas (não protege contra acesso direto ao banco nem contra um
+  flask db downgrade desta migração).
 
 
 \## O que NÃO existe ainda
 
 \- Autenticação (Flask-Login).
 \- Qualquer tela ou protótipo no Figma Make.
-- Model AuditLog — único que falta para completar as 6 tabelas do MVP, e
-  próximo passo.
 - Qualquer rota, view ou template da aplicação.
 - Exportação em XLSX.
+- Nenhum dado de teste no banco: as 6 tabelas existem, mas estão todas
+  vazias.
 
 
 
@@ -100,11 +127,11 @@ Não bloqueiam o andamento atual, mas devem ser resolvidos antes de fechar
 o MVP:
 
 - Padronizar `nullable=False` em `created_at` e `updated_at` nos models
-  User, Guest e Reservation, para ficarem consistentes com VipPlan. Hoje
-  só VipPlan tem essa restrição; nos outros três os campos aceitam nulo
-  no banco, ainda que o default do Python sempre os preencha. Decidido em
-  2026-07-30 não alterar os models existentes naquele momento, para não
-  misturar mudanças em uma etapa só.
+  User, Guest e Reservation, para ficarem consistentes com VipPlan e
+  VipItem. Hoje só VipPlan e VipItem têm essa restrição; nos outros três
+  os campos aceitam nulo no banco, ainda que o default do Python sempre
+  os preencha. Decidido em 2026-07-30 não alterar os models existentes
+  naquele momento, para não misturar mudanças em uma etapa só.
 - Definir o comportamento de `delivered_at` e `delivered_by_id` ao
   reverter uma entrega (desmarcar), quando a funcionalidade de
   marcar/desmarcar entrega for implementada. Em aberto: limpar os dois
