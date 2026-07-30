@@ -10,8 +10,8 @@
 
 Implementação dos models do banco de dados. A modelagem está concluída e
 aprovada; os models estão sendo implementados um a um, cada um com sua
-migração. Já implementados: User, Guest, Reservation e VipPlan.
-Próximo: VipItem.
+migração. Já implementados: User, Guest, Reservation, VipPlan e VipItem.
+Falta apenas AuditLog para completar o desenho de banco do MVP.
 
 
 
@@ -41,7 +41,7 @@ Próximo: VipItem.
 - Aplicação Flask reestruturada em pacote (app/), com application factory
   (create_app()).
 - SQLAlchemy e Flask-Migrate configurados e funcionando.
-- Models implementados: User, Guest, Reservation, VipPlan.
+- Models implementados: User, Guest, Reservation, VipPlan, VipItem.
 - Primeira migração aplicada; banco SQLite local funcional
   (instance/plataforma_gr.db, fora do controle de versão).
 - Model Reservation criado em app/models/reservation.py (FK guest_id ->
@@ -66,13 +66,29 @@ Próximo: VipItem.
   campos, ausência de unicidade entre reservation_id e planned_date, e
   status/delivery_status como texto livre sem default) registradas em
   docs/decisions/decision-log.md, entrada de 2026-07-30.
+- Model VipItem criado em app/models/vip_item.py (FK vip_plan_id ->
+  vip_plans.id, FK responsible_id -> users.id, relationships simples sem
+  foreign_keys=[...] porque cada FK aponta para uma tabela diferente;
+  nenhum campo de entrega, nenhuma regra de ondelete), registrado em
+  app/models/__init__.py.
+- Migração "Cria tabela de itens de vipagem" (e12448617514) gerada e
+  aplicada com sucesso; a tabela vip_items existe no banco (confirmado
+  via inspect: tabelas atuais = alembic_version, guests, reservations,
+  users, vip_items, vip_plans).
+- Decisões sobre os campos em aberto de VipItem registradas em
+  docs/decisions/decision-log.md, entrada de 2026-07-30: obrigatoriedade
+  dos campos, `cost` opcional e com tipo Numeric(10, 2) (nunca Float, para
+  evitar erro de arredondamento em valor monetário), availability_status
+  como texto livre, e substituição de item feita por edição do registro
+  existente, com rastreabilidade via entrada manual no AuditLog.
 
 
 \## O que NÃO existe ainda
 
 \- Autenticação (Flask-Login).
 \- Qualquer tela ou protótipo no Figma Make.
-- Models VipItem e AuditLog (VipItem é o próximo passo).
+- Model AuditLog — único que falta para completar as 6 tabelas do MVP, e
+  próximo passo.
 - Qualquer rota, view ou template da aplicação.
 - Exportação em XLSX.
 
@@ -95,6 +111,13 @@ o MVP:
   campos ou preservar o registro anterior. A regra do projeto de nunca
   apagar informação sem rastro sugere preservar, mas a decisão ainda não
   foi tomada.
+- Definir a regra de cascata ao apagar um VipPlan: o que acontece com os
+  VipItems ligados a ele. Nenhum `ondelete` foi definido nas FKs, por
+  decisão de 2026-07-30 — será resolvido quando a funcionalidade de
+  cancelar/apagar um planejamento for desenhada. Atenção: o SQLite só
+  aplica restrições de chave estrangeira se `PRAGMA foreign_keys`
+  estiver ligado, e por padrão ele vem desligado; não concluir pelo
+  teste local que "o banco deixou apagar".
 
 
 \## Como retomar o trabalho

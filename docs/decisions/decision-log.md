@@ -254,6 +254,47 @@ entre reservation_id e planned_date, e os valores de status/delivery_status.
 mais planejamento do que bloquear) e manter consistência com decisões
 já tomadas anteriormente.
 
+## [2026-07-30] Campos em aberto do model VipItem
+
+**Contexto:** o data-model.md definia a tabela VipItem, mas deixava em
+aberto a obrigatoriedade de alguns campos (especialmente `cost`), a
+precisão do campo `cost`, os valores de `availability_status`, e o
+comportamento de "substituição" de um item.
+
+**Decisão:**
+- Obrigatórios: `vip_plan_id`, `description`, `responsible_id`,
+  `availability_status`, `created_at`, `updated_at`.
+- `cost` é opcional (nullable=True). Itens costumam ser planejados antes
+  de o custo estar fechado.
+- `cost` usa o tipo `Numeric(10, 2)` — nunca `Float`, para evitar erros de
+  arredondamento em valores monetários.
+- `availability_status` permanece como texto livre nesta fase, seguindo o
+  mesmo padrão adotado em `VipPlan.status`. Será fechado quando as telas
+  existirem.
+- Não haverá campo de entrega por item (`delivery_status` só existe no
+  VipPlan) — reafirmando a decisão de 23/07 de que a confirmação de
+  entrega é feita em conjunto, não item por item.
+- Quando um item é marcado como "substituído", o registro existente é
+  editado (não se cria um novo VipItem vinculado). A rastreabilidade da
+  informação anterior fica a cargo de uma entrada manual no AuditLog
+  (Opção A, já decidida), registrada no momento da edição.
+- Comportamento de cascata ao apagar um VipPlan (o que acontece com seus
+  VipItems) fica em aberto — nenhuma regra de `ondelete` será definida
+  agora. Será decidido quando a funcionalidade de cancelar/apagar um
+  planejamento for desenhada, respeitando a regra geral de nunca apagar
+  informação sem rastro.
+
+**Alternativas consideradas:**
+- Tornar `cost` obrigatório — rejeitado por não refletir a rotina real de
+  planejamento antes da cotação de custos.
+- Criar um campo `replaced_by_id` para rastrear substituições via um novo
+  registro — rejeitado por adicionar complexidade não prevista no
+  documento original; o AuditLog manual já cobre a rastreabilidade.
+
+**Justificativa geral:** manter consistência com as decisões já tomadas
+para Reservation e VipPlan, e não travar regras de negócio (cascata,
+valores de status) que ainda não têm o contexto de tela necessário.
+
 
 
 \## Pendentes (a decidir em etapas futuras)

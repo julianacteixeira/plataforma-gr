@@ -4,39 +4,53 @@
 
 \## Próxima etapa a executar
 
-Implementar o model VipItem em app/models/vip_item.py, seguindo o mesmo
-padrão de User, Guest, Reservation e VipPlan (um arquivo por tabela,
-registrado em app/models/__init__.py), e gerar/aplicar a migração
-correspondente.
+Implementar o model AuditLog em app/models/audit_log.py, seguindo o mesmo
+padrão dos anteriores (um arquivo por tabela, registrado em
+app/models/__init__.py), e gerar/aplicar a migração correspondente. É o
+último model do desenho de banco do MVP.
 
-Campos previstos em docs/technical/data-model.md: vip_plan_id
-(FK -> VipPlan), description, cost (decimal), responsible_id (FK -> User),
-availability_status, created_at, updated_at.
+Campos previstos em docs/technical/data-model.md: user_id (FK -> User),
+entity_type, entity_id, action, details, timestamp.
 
 Antes de codificar, decidir (e registrar no decision-log.md) os pontos
-ainda em aberto: os valores aceitos de `availability_status`, a
-obrigatoriedade de cada campo, e a precisão do campo `cost` (decimal com
-quantas casas) — do mesmo modo como foi feito para Reservation e VipPlan
-nas entradas de 2026-07-30.
+ainda em aberto: os valores aceitos de `action`, a obrigatoriedade de cada
+campo, o tamanho de `details`, e se `entity_id` terá chave estrangeira
+real ou não — do mesmo modo como foi feito para Reservation, VipPlan e
+VipItem nas entradas de 2026-07-30.
 
-Lembrar que a confirmação de entrega é feita no nível do VipPlan
-(conjunto), nunca item por item — decisão aprovada em 2026-07-23. O
-VipItem controla apenas disponibilidade, custo e responsável.
+Ponto importante de modelagem: o AuditLog aponta para registros de
+tabelas diferentes (VipPlan, VipItem, Reservation) através do par
+entity_type + entity_id. Isso significa que `entity_id` normalmente NÃO
+pode ser uma chave estrangeira comum, porque não aponta para uma única
+tabela. Decidir isso explicitamente antes de escrever o model.
 
-Depois de VipItem, segue AuditLog.
+Lembrar que o log é alimentado manualmente pelo código (Opção A, decisão
+de 2026-07-23): cada função que cria ou altera VipPlan/VipItem também
+grava uma entrada aqui. Não há captura automática por eventos do
+SQLAlchemy nesta fase. Duas decisões recentes dependem disso funcionar:
+a substituição de item (editado no lugar, com rastro no AuditLog) e a
+futura reversão de entrega.
+
+Depois do AuditLog, o desenho de banco do MVP está completo e a frente
+seguinte é autenticação (Flask-Login).
 
 
 
 \## Já concluído nesta frente
 
-- Models User, Guest, Reservation e VipPlan implementados, com migrações
-  aplicadas.
-- Tabelas reservations e vip_plans criadas e confirmadas no banco local.
+- Models User, Guest, Reservation, VipPlan e VipItem implementados, com
+  migrações aplicadas.
+- Tabelas reservations, vip_plans e vip_items criadas e confirmadas no
+  banco local.
 - Campos em aberto de Reservation (source, room_number, reservation_code)
   decididos e registrados no decision-log.md em 2026-07-30.
 - Campos em aberto de VipPlan (obrigatoriedade, não-unicidade de
   reservation_id + planned_date, status/delivery_status como texto livre
   sem default) decididos e registrados no decision-log.md em 2026-07-30.
+- Campos em aberto de VipItem (obrigatoriedade, cost opcional com tipo
+  Numeric(10, 2), availability_status como texto livre, substituição por
+  edição do registro existente com rastro no AuditLog) decididos e
+  registrados no decision-log.md em 2026-07-30.
 
 
 
@@ -45,10 +59,12 @@ Depois de VipItem, segue AuditLog.
 Ver detalhes em docs/handoff/current-state.md:
 
 - Padronizar `nullable=False` em created_at/updated_at nos models User,
-  Guest e Reservation, para ficarem consistentes com VipPlan.
+  Guest e Reservation, para ficarem consistentes com VipPlan e VipItem.
 - Definir o comportamento de delivered_at/delivered_by_id ao reverter uma
   entrega, quando a funcionalidade de marcar/desmarcar entrega for
   implementada.
+- Definir a regra de cascata ao apagar um VipPlan (o que acontece com os
+  VipItems ligados a ele). Nenhum ondelete foi definido nas FKs.
 
 
 
