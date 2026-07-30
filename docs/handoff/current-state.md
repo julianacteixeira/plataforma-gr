@@ -10,7 +10,8 @@
 
 Implementação dos models do banco de dados. A modelagem está concluída e
 aprovada; os models estão sendo implementados um a um, cada um com sua
-migração. Já implementados: User, Guest e Reservation. Próximo: VipPlan.
+migração. Já implementados: User, Guest, Reservation e VipPlan.
+Próximo: VipItem.
 
 
 
@@ -40,7 +41,7 @@ migração. Já implementados: User, Guest e Reservation. Próximo: VipPlan.
 - Aplicação Flask reestruturada em pacote (app/), com application factory
   (create_app()).
 - SQLAlchemy e Flask-Migrate configurados e funcionando.
-- Models implementados: User, Guest, Reservation.
+- Models implementados: User, Guest, Reservation, VipPlan.
 - Primeira migração aplicada; banco SQLite local funcional
   (instance/plataforma_gr.db, fora do controle de versão).
 - Model Reservation criado em app/models/reservation.py (FK guest_id ->
@@ -52,16 +53,48 @@ migração. Já implementados: User, Guest e Reservation. Próximo: VipPlan.
 - Decisões sobre os campos em aberto de Reservation (source, room_number,
   reservation_code) registradas em docs/decisions/decision-log.md,
   entrada de 2026-07-30.
+- Model VipPlan criado em app/models/vip_plan.py (FK reservation_id ->
+  reservations.id, FKs delivered_by_id e created_by_id -> users.id, com
+  relationships declarados via foreign_keys=[...] para desfazer a
+  ambiguidade das duas FKs para a mesma tabela), registrado em
+  app/models/__init__.py.
+- Migração "Cria tabela de planos de vipagem" (0a9fd52b472e) gerada e
+  aplicada com sucesso; a tabela vip_plans existe no banco (confirmado
+  via inspect: tabelas atuais = alembic_version, guests, reservations,
+  users, vip_plans).
+- Decisões sobre os campos em aberto de VipPlan (obrigatoriedade dos
+  campos, ausência de unicidade entre reservation_id e planned_date, e
+  status/delivery_status como texto livre sem default) registradas em
+  docs/decisions/decision-log.md, entrada de 2026-07-30.
 
 
 \## O que NÃO existe ainda
 
 \- Autenticação (Flask-Login).
 \- Qualquer tela ou protótipo no Figma Make.
-- Models VipPlan, VipItem e AuditLog (VipPlan é o próximo passo).
+- Models VipItem e AuditLog (VipItem é o próximo passo).
 - Qualquer rota, view ou template da aplicação.
 - Exportação em XLSX.
 
+
+
+\## Pontos de atenção registrados para o futuro
+
+Não bloqueiam o andamento atual, mas devem ser resolvidos antes de fechar
+o MVP:
+
+- Padronizar `nullable=False` em `created_at` e `updated_at` nos models
+  User, Guest e Reservation, para ficarem consistentes com VipPlan. Hoje
+  só VipPlan tem essa restrição; nos outros três os campos aceitam nulo
+  no banco, ainda que o default do Python sempre os preencha. Decidido em
+  2026-07-30 não alterar os models existentes naquele momento, para não
+  misturar mudanças em uma etapa só.
+- Definir o comportamento de `delivered_at` e `delivered_by_id` ao
+  reverter uma entrega (desmarcar), quando a funcionalidade de
+  marcar/desmarcar entrega for implementada. Em aberto: limpar os dois
+  campos ou preservar o registro anterior. A regra do projeto de nunca
+  apagar informação sem rastro sugere preservar, mas a decisão ainda não
+  foi tomada.
 
 
 \## Como retomar o trabalho

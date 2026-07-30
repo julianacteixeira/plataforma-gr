@@ -221,6 +221,39 @@ pontos em aberto: os valores aceitos para `source`, a obrigatoriedade de
 **Justificativa geral:** manter o MVP simples e não travar regras para
 cenários (Opera Cloud) que ainda não têm código correspondente.
 
+## [2026-07-30] Campos em aberto do model VipPlan
+
+**Contexto:** o data-model.md definia a tabela VipPlan, mas deixava em
+aberto a obrigatoriedade de vários campos, a possibilidade de unicidade
+entre reservation_id e planned_date, e os valores de status/delivery_status.
+
+**Decisão:**
+- Todos os campos sem ressalva explícita no documento (`reservation_id`,
+  `planned_date`, `status`, `delivery_status`, `created_by_id`,
+  `created_at`, `updated_at`) são obrigatórios (nullable=False).
+  `room_number_override`, `delivered_at` e `delivered_by_id` seguem
+  opcionais, como já estava explícito no documento.
+- Não haverá unicidade entre `reservation_id` e `planned_date`. Um mesmo
+  dia de uma reserva pode ter mais de um VipPlan (ex: chegada e
+  aniversário coincidindo na mesma data).
+- `status` e `delivery_status` permanecem como texto livre nesta fase,
+  reafirmando a decisão de 23/07. Serão fechados quando as telas de
+  planejamento existirem.
+- O comportamento de `delivered_at`/`delivered_by_id` ao reverter uma
+  entrega fica em aberto para quando a funcionalidade de
+  marcar/desmarcar entrega for implementada — não bloqueia a criação
+  do model agora.
+
+**Alternativas consideradas:**
+- Travar unicidade reservation_id+planned_date — rejeitado por poder
+  bloquear planejamentos legítimos de dois eventos no mesmo dia.
+- Fechar valores de status/delivery_status agora — rejeitado por
+  contrariar a decisão de 23/07, que previa esperar as telas existirem.
+
+**Justificativa geral:** priorizar flexibilidade operacional (permitir
+mais planejamento do que bloquear) e manter consistência com decisões
+já tomadas anteriormente.
+
 
 
 \## Pendentes (a decidir em etapas futuras)

@@ -4,30 +4,51 @@
 
 \## Próxima etapa a executar
 
-Implementar o model VipPlan em app/models/vip_plan.py, seguindo o mesmo
-padrão de User, Guest e Reservation (um arquivo por tabela, registrado em
-app/models/__init__.py), e gerar/aplicar a migração correspondente.
+Implementar o model VipItem em app/models/vip_item.py, seguindo o mesmo
+padrão de User, Guest, Reservation e VipPlan (um arquivo por tabela,
+registrado em app/models/__init__.py), e gerar/aplicar a migração
+correspondente.
 
-Campos previstos em docs/technical/data-model.md: reservation_id
-(FK -> Reservation), planned_date, room_number_override, status,
-delivery_status, delivered_at, delivered_by_id (FK -> User),
-created_by_id (FK -> User), created_at, updated_at.
+Campos previstos em docs/technical/data-model.md: vip_plan_id
+(FK -> VipPlan), description, cost (decimal), responsible_id (FK -> User),
+availability_status, created_at, updated_at.
 
 Antes de codificar, decidir (e registrar no decision-log.md) os pontos
-ainda em aberto: os valores aceitos de `status` e `delivery_status`, e a
-obrigatoriedade de cada campo — do mesmo modo como foi feito para
-Reservation na entrada de 2026-07-30.
+ainda em aberto: os valores aceitos de `availability_status`, a
+obrigatoriedade de cada campo, e a precisão do campo `cost` (decimal com
+quantas casas) — do mesmo modo como foi feito para Reservation e VipPlan
+nas entradas de 2026-07-30.
 
-Depois de VipPlan, seguem VipItem e AuditLog, nessa ordem.
+Lembrar que a confirmação de entrega é feita no nível do VipPlan
+(conjunto), nunca item por item — decisão aprovada em 2026-07-23. O
+VipItem controla apenas disponibilidade, custo e responsável.
+
+Depois de VipItem, segue AuditLog.
 
 
 
 \## Já concluído nesta frente
 
-- Models User, Guest e Reservation implementados, com migrações aplicadas.
-- Tabela reservations criada e confirmada no banco local.
+- Models User, Guest, Reservation e VipPlan implementados, com migrações
+  aplicadas.
+- Tabelas reservations e vip_plans criadas e confirmadas no banco local.
 - Campos em aberto de Reservation (source, room_number, reservation_code)
   decididos e registrados no decision-log.md em 2026-07-30.
+- Campos em aberto de VipPlan (obrigatoriedade, não-unicidade de
+  reservation_id + planned_date, status/delivery_status como texto livre
+  sem default) decididos e registrados no decision-log.md em 2026-07-30.
+
+
+
+\## Pontos de atenção a resolver antes de fechar o MVP
+
+Ver detalhes em docs/handoff/current-state.md:
+
+- Padronizar `nullable=False` em created_at/updated_at nos models User,
+  Guest e Reservation, para ficarem consistentes com VipPlan.
+- Definir o comportamento de delivered_at/delivered_by_id ao reverter uma
+  entrega, quando a funcionalidade de marcar/desmarcar entrega for
+  implementada.
 
 
 
