@@ -2,13 +2,15 @@
 
 
 
-\*\*Última atualização:\*\* 2026-07-23
+\*\*Última atualização:\*\* 2026-07-30
 
 
 
 \## Fase atual
 
-Planejamento inicial. Nenhum código foi escrito ainda. A modelagem foi concluída e a implementação do banco (SQLAlchemy) é o próximo passo.
+Implementação dos models do banco de dados. A modelagem está concluída e
+aprovada; os models estão sendo implementados um a um, cada um com sua
+migração. Já implementados: User, Guest e Reservation. Próximo: VipPlan.
 
 
 
@@ -38,21 +40,27 @@ Planejamento inicial. Nenhum código foi escrito ainda. A modelagem foi concluí
 - Aplicação Flask reestruturada em pacote (app/), com application factory
   (create_app()).
 - SQLAlchemy e Flask-Migrate configurados e funcionando.
-- Models implementados: User, Guest.
+- Models implementados: User, Guest, Reservation.
 - Primeira migração aplicada; banco SQLite local funcional
   (instance/plataforma_gr.db, fora do controle de versão).
+- Model Reservation criado em app/models/reservation.py (FK guest_id ->
+  guests.id, reservation_code único, source com default "manual"),
+  registrado em app/models/__init__.py.
+- Migração "Cria tabela de reservas" gerada e aplicada com sucesso; a
+  tabela reservations existe no banco (confirmado via inspect: tabelas
+  atuais = alembic_version, guests, reservations, users).
+- Decisões sobre os campos em aberto de Reservation (source, room_number,
+  reservation_code) registradas em docs/decisions/decision-log.md,
+  entrada de 2026-07-30.
 
 
 \## O que NÃO existe ainda
 
-\- Repositório Git/GitHub.
-\- Estrutura de pastas do código.
-\- Aplicação Flask.
-\- Banco de dados/modelos.
-\- Autenticação.
+\- Autenticação (Flask-Login).
 \- Qualquer tela ou protótipo no Figma Make.
-- Nenhum model SQLAlchemy implementado (próximo passo).
-- Nenhuma migração de banco de dados criada.
+- Models VipPlan, VipItem e AuditLog (VipPlan é o próximo passo).
+- Qualquer rota, view ou template da aplicação.
+- Exportação em XLSX.
 
 
 

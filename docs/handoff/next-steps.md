@@ -4,11 +4,30 @@
 
 \## Próxima etapa a executar
 
-Implementar os models restantes (Reservation, VipPlan, VipItem, AuditLog),
+Implementar o model VipPlan em app/models/vip_plan.py, seguindo o mesmo
+padrão de User, Guest e Reservation (um arquivo por tabela, registrado em
+app/models/__init__.py), e gerar/aplicar a migração correspondente.
 
-incluindo os relacionamentos (chaves estrangeiras) entre eles e com User/
+Campos previstos em docs/technical/data-model.md: reservation_id
+(FK -> Reservation), planned_date, room_number_override, status,
+delivery_status, delivered_at, delivered_by_id (FK -> User),
+created_by_id (FK -> User), created_at, updated_at.
 
-Guest, seguido de nova migração.
+Antes de codificar, decidir (e registrar no decision-log.md) os pontos
+ainda em aberto: os valores aceitos de `status` e `delivery_status`, e a
+obrigatoriedade de cada campo — do mesmo modo como foi feito para
+Reservation na entrada de 2026-07-30.
+
+Depois de VipPlan, seguem VipItem e AuditLog, nessa ordem.
+
+
+
+\## Já concluído nesta frente
+
+- Models User, Guest e Reservation implementados, com migrações aplicadas.
+- Tabela reservations criada e confirmada no banco local.
+- Campos em aberto de Reservation (source, room_number, reservation_code)
+  decididos e registrados no decision-log.md em 2026-07-30.
 
 
 

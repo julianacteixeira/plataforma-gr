@@ -193,6 +193,34 @@ quando for possível visualizar as telas reais.
 contexto visual, evitando retrabalho por decisão prematura.
 **Status:** Aprovado.
 
+## [2026-07-30] Campos em aberto do model Reservation
+
+**Contexto:** o data-model.md definia a tabela Reservation, mas deixava três
+pontos em aberto: os valores aceitos para `source`, a obrigatoriedade de
+`room_number`, e o formato de `reservation_code`.
+
+**Decisão:**
+- `source`: aceitar apenas o valor `"manual"` nesta fase do projeto. O valor
+  `"opera_cloud"` será adicionado (via migração simples) somente quando a
+  integração com o Opera Cloud for implementada.
+- `room_number`: campo opcional (nullable). Reservas podem ser importadas
+  antes de o quarto ser atribuído.
+- `reservation_code`: mantido como texto livre (string, único, não vazio),
+  sem validação de formato ou tamanho fixo. Sistemas diferentes (importação
+  manual hoje, Opera Cloud no futuro) podem gerar códigos em formatos
+  distintos.
+
+**Alternativas consideradas:**
+- Incluir `"opera_cloud"` como valor válido de `source` desde já — rejeitado
+  por abrir um valor para uma integração que ainda não existe no código.
+- Tornar `room_number` obrigatório — rejeitado por quebrar a importação de
+  reservas futuras sem quarto definido.
+- Definir um padrão fixo de formato para `reservation_code` — rejeitado por
+  restringir códigos vindos de fontes ainda não implementadas.
+
+**Justificativa geral:** manter o MVP simples e não travar regras para
+cenários (Opera Cloud) que ainda não têm código correspondente.
+
 
 
 \## Pendentes (a decidir em etapas futuras)
