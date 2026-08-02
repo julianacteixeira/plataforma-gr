@@ -340,6 +340,93 @@ passar pela trava. Aceitável no MVP (tabela nova, sem dados reais em
 risco); revisitar se algum dia for necessário reverter esta migração com
 dados de produção existentes.
 
+## [2026-08-02] Importação manual de reservas via Opera Cloud (Trilha 1)
+
+**Contexto:** Definido o desenho da primeira importação real de dados,
+a partir do relatório RES_DETAIL do Opera Cloud (formato XML).
+
+**Decisões:**
+- Formato de importação: XML do relatório RES_DETAIL do Opera Cloud.
+- Chave de upsert de Reservation: reservation_code (mapeado de
+  CONFIRMATION_NO no XML).
+- Reserva nova no arquivo: criada normalmente.
+- Reserva existente com dados alterados no Opera: campos vindos do
+  Opera são atualizados, mas a configuração manual da reserva
+  (planejamentos de vipagem já criados) é preservada. Um aviso visual
+  deve indicar que a reserva mudou desde a última importação (mecanismo
+  exato definido na etapa de UI).
+- Reserva cancelada no Opera: identificada por SHORT_RESV_STATUS = CXL
+  no arquivo reimportado. Marcada como cancelada, nunca apagada.
+- Sem trava de data: qualquer data futura presente no arquivo pode ser
+  importada a qualquer momento.
+- Identificação do hóspede (Guest): pelo campo opera_guest_id (mapeado
+  de GUEST_NAME_ID no XML), único por perfil do Opera. Cada perfil do
+  Opera gera um Guest próprio nesta fase — sem unificação automática de
+  perfis duplicados (ver épico de resolução de identidade registrado em
+  backlog.md).
+- Guest.all_member / all_card_number: derivados dos MEMBERSHIP_TYPE
+  presentes na reserva. Considerados apenas tipos iniciados com "A" (A1
+  a A5); tipo "ID" e categorias fora da faixa A (All Signature,
+  Explorer, Ibis etc.) são ignorados. Quando há mais de um tipo A,
+  usa-se o nível mais alto.
+- A categoria VIP do hóspede NÃO é mais um campo de texto escrito por
+  esta importação — ela é resolvida pelo sistema de badges, descrito na
+  entrada de decisão seguinte, logo abaixo desta.
+- Reservation.notes (campo novo, tipo Text): cada RES_COMMENT do XML
+  vira um parágrafo dentro deste campo, na ordem em que aparecem.
+
+**Mudanças de schema:** Reservation.notes (Text, opcional);
+Guest.opera_guest_id (String, opcional, único quando presente).
+
+**Status:** Aprovado.
+
+## [2026-08-02] Categoria VIP do hóspede vira sistema de badges
+
+**Contexto:** A decisão de 2026-07-23 definia Guest.vip_category como
+texto livre único. Durante o desenho da importação via Opera Cloud
+(entrada acima), ficou claro que um campo de texto único não suporta
+com segurança as regras necessárias de atualização automática parcial
+sem risco de apagar texto digitado manualmente. Esta decisão substitui
+a de 2026-07-23 nesse ponto específico.
+
+**Decisão:**
+- Guest.vip_category (campo de texto único) é REMOVIDO do modelo.
+- Nova tabela GuestBadge substitui esse campo: um hóspede pode ter
+  vários badges independentes (ex: "Gold", "Habitué", "Aniversário",
+  "Colaborador Accor"), cada um com sua própria origem e status.
+- Campos de GuestBadge: id, guest_id (FK -> Guest), label (string),
+  source (string: "all_tier", "keyword_suggestion", "stay_count" ou
+  "manual"), status (string: "active", "suggested" ou "rejected"),
+  created_at, updated_at, created_by_id (FK -> User, opcional — nulo
+  quando source é automático).
+- Guest.vip (booleano) passa a significar: hóspede tem pelo menos um
+  GuestBadge com status "active", de qualquer origem ou label.
+- Badge de origem "all_tier": criado/atualizado automaticamente pela
+  importação quando o hóspede tiver nível ALL A3 (Gold), A4 (Platinum)
+  ou A5 (Diamond) — entra direto com status "active". Em upgrade de
+  nível, o sistema atualiza o label do badge existente. Em downgrade,
+  o sistema nunca rebaixa nem remove automaticamente.
+- Badge de origem "keyword_suggestion": quando uma palavra-chave for
+  encontrada em Reservation.notes (lista inicial fixa no código:
+  "aniversário", "niver", "casamento", "vip", "mimo", "colaborador
+  accor", "diretoria accor" — não editável pela equipe nesta fase), o
+  sistema cria um GuestBadge com status "suggested". Vira "active" só
+  quando um humano aceitar.
+- Badge de origem "stay_count": quando o hóspede atingir 5 ou mais
+  Reservation vinculadas ao mesmo guest_id, o sistema sugere o badge
+  "Habitué" com status "suggested". Limitação conhecida: contagem só
+  enxerga reservas do mesmo opera_guest_id — hóspedes com perfis
+  duplicados no Opera podem ter contagem subestimada até o épico de
+  resolução de identidade ser resolvido.
+- Badge de origem "manual": criado, editado e removido livremente pela
+  equipe, sem regra automática.
+- Sugestão recusada (status "rejected") nunca é apagada nem re-sugerida
+  automaticamente depois — fica disponível para reativação manual a
+  qualquer momento.
+- GuestBadge entra no escopo de auditoria do AuditLog, junto com
+  Reservation, VipPlan e VipItem.
+
+**Status:** Aprovado.
 
 
 \## Pendentes (a decidir em etapas futuras)

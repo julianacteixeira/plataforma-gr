@@ -68,15 +68,43 @@ fechados durante a implementação, quando for possível visualizar as telas.
 
 | phone | string | opcional |
 
-| vip | boolean | |
+| opera\_guest\_id | string | opcional, único quando presente — identificador do perfil do hóspede no Opera Cloud (GUEST\_NAME\_ID) |
 
-| vip\_category | string | valores em aberto — só relevante se vip=true |
+| vip | boolean | true quando o hóspede tem pelo menos um GuestBadge ativo (ver tabela GuestBadge) |
 
 | all\_member | boolean | participa do programa de fidelidade ALL |
 
 | all\_card\_number | string | opcional, preenchido se all\_member=true |
 
 | pmid | string | opcional, PMID do hóspede no ALL |
+
+| created\_at | timestamp | |
+
+| updated\_at | timestamp | |
+
+
+
+\## GuestBadge (selo do hóspede)
+
+Substitui o antigo campo Guest.vip\_category (ver decisão de 2026-08-02
+em decision-log.md). Um hóspede pode ter vários badges independentes,
+cada um com sua própria origem e status.
+
+| Campo | Tipo | Observação |
+
+|---|---|---|
+
+| id | integer | PK |
+
+| guest\_id | integer | FK -> Guest |
+
+| label | string | ex: "Gold", "Habitué", "Aniversário", "Colaborador Accor" |
+
+| source | string | "all\_tier", "keyword\_suggestion", "stay\_count" ou "manual" |
+
+| status | string | "active", "suggested" ou "rejected" |
+
+| created\_by\_id | integer | FK -> User, opcional — nulo quando source é automático |
 
 | created\_at | timestamp | |
 
@@ -103,6 +131,8 @@ fechados durante a implementação, quando for possível visualizar as telas.
 | reservation\_code | string | único — chave usada para evitar importação duplicada |
 
 | source | string | valores em aberto (ex: manual, opera\_cloud) |
+
+| notes | text | opcional — observações vindas do Opera Cloud (RES\_COMMENT), cada uma em um parágrafo, na ordem em que aparecem no relatório |
 
 | created\_at | timestamp | |
 
@@ -196,7 +226,7 @@ automática via eventos do SQLAlchemy no pós-MVP (Opção B).
 
 | user\_id | integer | FK -> User, quem fez a ação |
 
-| entity\_type | string | ex: VipPlan, VipItem, Reservation |
+| entity\_type | string | ex: VipPlan, VipItem, Reservation, GuestBadge |
 
 | entity\_id | integer | qual registro específico |
 
@@ -220,6 +250,8 @@ automática via eventos do SQLAlchemy no pós-MVP (Opção B).
 
 Guest (1) ───< tem >─── Reservation (N)
 
+Guest (1) ───< tem >─── GuestBadge (N)
+
 Reservation (1) ───< pode gerar >─── VipPlan (N)
 
 VipPlan (1) ───< contém >─── VipItem (N)
@@ -238,7 +270,9 @@ User (1) ───< autor de >─── AuditLog (N)
 
 \## Decisões relacionadas
 
-Ver `docs/decisions/decision-log.md`, entradas de 2026-07-23.
+Ver `docs/decisions/decision-log.md`, entradas de 2026-07-23 e
+2026-08-02 (importação via Opera Cloud e sistema de badges de
+GuestBadge).
 
 
 
@@ -246,7 +280,7 @@ Ver `docs/decisions/decision-log.md`, entradas de 2026-07-23.
 
 \- Fechar os valores exatos de cada campo de status controlado (role,
 
-&#x20; vip\_category, source, VipPlan.status, delivery\_status,
+&#x20; source, VipPlan.status, delivery\_status,
 
 &#x20; availability\_status, AuditLog.action).
 
