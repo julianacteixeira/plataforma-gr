@@ -4,15 +4,14 @@
 
 \## Próxima etapa a executar
 
-Com o desenho de banco completo e os listeners do AuditLog testados com
-sucesso, a próxima grande etapa é começar a
-camada de autenticação (Flask-Login) ou as primeiras rotas/telas. A
-escolha entre as duas fica para decidir na próxima sessão.
+Criar a rota de login (backend) e a rota de logout, usando login_user()
+e logout_user() do Flask-Login, e proteger uma rota de teste com
+@login_required para validar o fluxo completo (usuário não autenticado
+é redirecionado; usuário autenticado acessa a rota normalmente).
 
-Vale considerar que a autenticação vem antes por dependência real: tanto
-VipPlan.created_by_id quanto AuditLog.user_id são obrigatórios e exigem
-saber qual usuário está logado. Sem login, qualquer tela que crie
-planejamento ou grave log precisaria de um usuário fixo improvisado.
+Lembrar que login_manager.login_view = "auth.login" já está configurado
+em app/__init__.py, esperando essa rota — sem ela, o redirecionamento de
+um usuário não autenticado vai falhar.
 
 Lembrar também que o log é alimentado manualmente pelo código (Opção A,
 decisão de 2026-07-23): cada função que cria ou altera VipPlan/VipItem
@@ -23,6 +22,12 @@ fase, então isso precisa ser escrito à mão em cada rota.
 
 \## Já concluído nesta frente
 
+- Configuração do Flask-Login concluída: LoginManager registrado em
+  app/extensions.py e app/__init__.py, model User herdando de
+  UserMixin, métodos set_password/check_password com hashing via
+  werkzeug.security, e função load_user (user_loader) implementada.
+  Testado manualmente pelo flask shell em 2026-08-02: senha correta
+  retorna True, senha errada retorna False.
 - Listeners de imutabilidade do AuditLog (before_update e before_delete)
   testados manualmente com sucesso via flask shell em 2026-08-02: as duas
   tentativas (alterar e apagar uma entrada existente) levantaram

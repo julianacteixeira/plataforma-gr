@@ -110,13 +110,23 @@ próxima sessão.
   entradas aplicada via listeners — com as duas limitações conhecidas
   registradas (não protege contra acesso direto ao banco nem contra um
   flask db downgrade desta migração).
+- Flask-Login instalado e integrado: LoginManager registrado em
+  app/extensions.py e inicializado em app/__init__.py; o model User
+  passou a herdar de UserMixin, com métodos set_password/check_password
+  usando hashing via werkzeug.security, e a função load_user (via
+  @login_manager.user_loader) implementada em app/models/user.py. Login
+  testado manualmente pelo flask shell em 2026-08-02: senha correta
+  retorna True, senha errada retorna False.
 
 
 \## O que NÃO existe ainda
 
-\- Autenticação (Flask-Login).
 \- Qualquer tela ou protótipo no Figma Make.
-- Qualquer rota, view ou template da aplicação.
+- Qualquer rota, view ou template da aplicação — inclui as rotas de
+  login e logout: a base do Flask-Login já existe (LoginManager, User
+  com UserMixin, hashing de senha), mas a rota "auth.login" esperada
+  por login_manager.login_view ainda não foi criada, nem a de logout,
+  nem nenhum template.
 - Exportação em XLSX.
 - Nenhum dado de teste no banco: as 6 tabelas existem, mas estão todas
   vazias.
@@ -129,11 +139,11 @@ Não bloqueiam o andamento atual, mas devem ser resolvidos antes de fechar
 o MVP:
 
 - Padronizar `nullable=False` em `created_at` e `updated_at` nos models
-  User, Guest e Reservation, para ficarem consistentes com VipPlan e
-  VipItem. Hoje só VipPlan e VipItem têm essa restrição; nos outros três
-  os campos aceitam nulo no banco, ainda que o default do Python sempre
-  os preencha. Decidido em 2026-07-30 não alterar os models existentes
-  naquele momento, para não misturar mudanças em uma etapa só.
+  Guest e Reservation, para ficarem consistentes com VipPlan, VipItem e
+  User. Para User essa pendência já foi resolvida: `created_at` passou
+  a `nullable=False` via migração a2a4cd39ed83, aplicada com sucesso em
+  2026-08-02. Guest e Reservation continuam pendentes dessa
+  padronização.
 - Definir o comportamento de `delivered_at` e `delivered_by_id` ao
   reverter uma entrega (desmarcar), quando a funcionalidade de
   marcar/desmarcar entrega for implementada. Em aberto: limpar os dois
