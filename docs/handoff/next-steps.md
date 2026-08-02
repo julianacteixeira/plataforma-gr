@@ -4,14 +4,9 @@
 
 \## Próxima etapa a executar
 
-Criar a rota de login (backend) e a rota de logout, usando login_user()
-e logout_user() do Flask-Login, e proteger uma rota de teste com
-@login_required para validar o fluxo completo (usuário não autenticado
-é redirecionado; usuário autenticado acessa a rota normalmente).
-
-Lembrar que login_manager.login_view = "auth.login" já está configurado
-em app/__init__.py, esperando essa rota — sem ela, o redirecionamento de
-um usuário não autenticado vai falhar.
+Importação manual de reservas (upload de arquivo) e consulta de
+reservas/hóspedes, conforme a ordem já prevista em "Etapas seguintes
+previstas" (item 3).
 
 Lembrar também que o log é alimentado manualmente pelo código (Opção A,
 decisão de 2026-07-23): cada função que cria ou altera VipPlan/VipItem
@@ -22,6 +17,13 @@ fase, então isso precisa ser escrito à mão em cada rota.
 
 \## Já concluído nesta frente
 
+- Rotas de login e logout implementadas em app/auth/routes.py
+  (blueprint auth), usando login_user()/logout_user() do Flask-Login.
+  LoginForm (Flask-WTF) valida e-mail e senha, com proteção CSRF via
+  CSRFProtect registrado globalmente. Rota de exemplo /painel protegida
+  com @login_required. Testado manualmente em 2026-08-02: login
+  correto, logout, bloqueio de /painel sem sessão, e rejeição de senha
+  incorreta com mensagem de erro.
 - Configuração do Flask-Login concluída: LoginManager registrado em
   app/extensions.py e app/__init__.py, model User herdando de
   UserMixin, métodos set_password/check_password com hashing via

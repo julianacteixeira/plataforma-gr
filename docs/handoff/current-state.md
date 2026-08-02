@@ -117,16 +117,20 @@ próxima sessão.
   @login_manager.user_loader) implementada em app/models/user.py. Login
   testado manualmente pelo flask shell em 2026-08-02: senha correta
   retorna True, senha errada retorna False.
+- Autenticação completa via Flask-Login e Flask-WTF: blueprint auth com
+  rotas /auth/login e /auth/logout (app/auth/routes.py), LoginForm
+  (app/auth/forms.py) com validação de e-mail e proteção CSRF via
+  CSRFProtect registrado globalmente em app/__init__.py, e rota de
+  exemplo /painel protegida por @login_required. Testado manualmente
+  em 2026-08-02: login correto, logout, bloqueio de /painel sem
+  sessão, e rejeição de senha incorreta com mensagem de erro.
 
 
 \## O que NÃO existe ainda
 
 \- Qualquer tela ou protótipo no Figma Make.
-- Qualquer rota, view ou template da aplicação — inclui as rotas de
-  login e logout: a base do Flask-Login já existe (LoginManager, User
-  com UserMixin, hashing de senha), mas a rota "auth.login" esperada
-  por login_manager.login_view ainda não foi criada, nem a de logout,
-  nem nenhum template.
+- Qualquer outra rota, view ou template da aplicação (além da
+  autenticação, que já existe).
 - Exportação em XLSX.
 - Nenhum dado de teste no banco: as 6 tabelas existem, mas estão todas
   vazias.
