@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_wtf import CSRFProtect
 
 # Instâncias únicas, compartilhadas por toda a aplicação.
 # São criadas aqui "vazias" e conectadas à aplicação de verdade
@@ -8,3 +9,4 @@ from flask_login import LoginManager
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
+csrf = CSRFProtect()
