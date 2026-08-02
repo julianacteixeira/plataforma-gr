@@ -2,7 +2,7 @@
 
 
 
-\*\*Última atualização:\*\* 2026-07-30
+\*\*Última atualização:\*\* 2026-08-02
 
 
 
@@ -95,8 +95,10 @@ próxima sessão.
 - Dois listeners de evento do SQLAlchemy no final de audit_log.py
   (before_update e before_delete) que levantam RuntimeError, impedindo
   que entradas de log sejam alteradas ou apagadas através do código da
-  aplicação. IMPLEMENTADO MAS AINDA NÃO TESTADO — ver próximo passo em
-  docs/handoff/next-steps.md.
+  aplicação. TESTADO MANUALMENTE COM SUCESSO em 2026-08-02, via flask
+  shell: as duas tentativas (alterar e apagar uma entrada) levantaram
+  RuntimeError como esperado, e o registro original permaneceu intacto
+  após rollback().
 - Migração "Cria tabela de audit log" (bd1651bb9ab7) gerada e aplicada
   com sucesso; a tabela audit_logs existe no banco (confirmado via
   inspect: tabelas atuais = alembic_version, audit_logs, guests,

@@ -4,39 +4,8 @@
 
 \## Próxima etapa a executar
 
-Testar manualmente se os listeners do AuditLog realmente funcionam. Eles
-foram implementados em app/models/audit_log.py (before_update e
-before_delete, levantando RuntimeError), mas **nunca foram testados** —
-só escritos. Enquanto não houver teste, não se pode afirmar que a
-imutabilidade do log está garantida.
-
-O teste exige criar dados de apoio, porque audit_logs.user_id é uma FK
-obrigatória para users.id e o banco está vazio. Roteiro sugerido, no
-shell do Flask, sempre com dados fictícios (nunca dados reais de
-hóspede):
-
-1. Criar um User de teste e uma entrada de AuditLog ligada a ele.
-2. Tentar alterar um campo dessa entrada e chamar db.session.commit() —
-   deve levantar RuntimeError("Entradas de AuditLog não podem ser
-   alteradas.").
-3. Rodar db.session.rollback() (necessário: o commit interrompido deixa a
-   sessão em estado inconsistente).
-4. Tentar db.session.delete(entrada) + commit() — deve levantar
-   RuntimeError("Entradas de AuditLog não podem ser apagadas.").
-5. Rodar rollback() de novo e confirmar que a entrada continua no banco.
-
-Lembrar que os listeners disparam no flush, não no momento da atribuição
-em Python: o erro aparece no commit(), não na linha que altera o campo.
-
-Se o teste falhar, a decisão de 2026-07-30 sobre imutabilidade do
-AuditLog não está de fato aplicada, e isso precisa ser corrigido antes de
-qualquer tela que escreva no log.
-
-
-
-\## Depois disso: próxima grande etapa
-
-Com o desenho de banco completo, a próxima grande etapa é começar a
+Com o desenho de banco completo e os listeners do AuditLog testados com
+sucesso, a próxima grande etapa é começar a
 camada de autenticação (Flask-Login) ou as primeiras rotas/telas. A
 escolha entre as duas fica para decidir na próxima sessão.
 
@@ -54,6 +23,12 @@ fase, então isso precisa ser escrito à mão em cada rota.
 
 \## Já concluído nesta frente
 
+- Listeners de imutabilidade do AuditLog (before_update e before_delete)
+  testados manualmente com sucesso via flask shell em 2026-08-02: as duas
+  tentativas (alterar e apagar uma entrada existente) levantaram
+  RuntimeError como esperado, e após rollback() o registro original
+  permaneceu intacto no banco. Confirma que a imutabilidade decidida em
+  2026-07-30 está de fato em vigor.
 - Desenho de banco do MVP completo: os 6 models implementados (User,
   Guest, Reservation, VipPlan, VipItem, AuditLog), com migrações
   aplicadas.
