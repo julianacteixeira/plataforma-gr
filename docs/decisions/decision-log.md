@@ -429,7 +429,30 @@ a de 2026-07-23 nesse ponto específico.
 **Status:** Aprovado.
 
 
-\## Pendentes (a decidir em etapas futuras)
+\## [2026-08-03] Decisões técnicas da implementação da importação Opera Cloud
+
+**Contexto:** ao planejar a implementação da importação manual de reservas
+(decisão de 2026-08-02), surgiram três pontos técnicos sem decisão prévia
+registrada: onde guardar o arquivo XML enviado, onde ficar o módulo de
+integração, e se o campo `Guest.vip_category` deveria ser removido agora.
+
+**Decisão:**
+- O arquivo XML enviado no upload é processado em memória e descartado
+  após a importação — não é salvo em disco. A rastreabilidade do que foi
+  criado/alterado fica no AuditLog, não no arquivo original.
+- O módulo de integração com o Opera Cloud fica isolado em
+  `app/integrations/opera_cloud/`, conforme a decisão de 2026-07-13 de
+  manter essa integração separada do restante do sistema. O nome
+  genérico `integrations` (em vez de `imports`) deixa a pasta pronta para
+  outras integrações externas futuras, não só o Opera.
+- `Guest.vip_category` é removido do model agora (não apenas depreciado),
+  já que a tabela `guests` está vazia (sem dados reais em risco) e a
+  decisão de 2026-08-02 já havia aprovado sua substituição por
+  `GuestBadge`.
+
+**Status:** Aprovado.
+
+## Pendentes (a decidir em etapas futuras)
 
 \- Estrutura exata de pastas do repositório.
 

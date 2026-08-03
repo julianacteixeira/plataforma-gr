@@ -12,6 +12,7 @@ class Reservation(db.Model):
     room_number = db.Column(db.String(20), nullable=True)
     reservation_code = db.Column(db.String(50), unique=True, nullable=False)
     source = db.Column(db.String(20), nullable=False, default="manual")
+    notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
