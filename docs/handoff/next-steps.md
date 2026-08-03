@@ -6,7 +6,21 @@
 
 Importação manual de reservas (upload de arquivo) e consulta de
 reservas/hóspedes, conforme a ordem já prevista em "Etapas seguintes
-previstas" (item 3).
+previstas" (item 3). Plano combinado em 2026-08-03, em 4 etapas:
+
+1. Alinhar schema ao já decidido — CONCLUÍDA em 2026-08-03 (ver
+   current-state.md e decision-log.md, entrada de 2026-08-03).
+2. Módulo isolado de importação (Opera Cloud), em
+   app/integrations/opera_cloud/: parser do XML RES_DETAIL e lógica de
+   upsert de Guest/Reservation/GuestBadge, com entradas em AuditLog.
+   PRÓXIMO PASSO.
+3. Rota de upload (blueprint novo, Flask-WTF, @login_required),
+   protegida, sem identidade visual ainda.
+4. Consulta de reservas/hóspedes (listagem e detalhe).
+
+Decisões técnicas já tomadas para as próximas etapas (ver decision-log.md,
+2026-08-03): o arquivo XML enviado é processado em memória e descartado
+(não é salvo em disco); o módulo fica em app/integrations/opera_cloud/.
 
 Lembrar também que o log é alimentado manualmente pelo código (Opção A,
 decisão de 2026-07-23): cada função que cria ou altera VipPlan/VipItem

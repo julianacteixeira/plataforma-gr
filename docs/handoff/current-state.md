@@ -124,6 +124,21 @@ próxima sessão.
   exemplo /painel protegida por @login_required. Testado manualmente
   em 2026-08-02: login correto, logout, bloqueio de /painel sem
   sessão, e rejeição de senha incorreta com mensagem de erro.
+- Etapa 1 da importação Opera Cloud concluída (2026-08-03): schema
+  alinhado às decisões de 2026-08-02. Model Guest perdeu vip_category e
+  ganhou opera_guest_id (único, opcional); Reservation ganhou notes
+  (Text, opcional); model novo GuestBadge criado em
+  app/models/guest_badge.py e registrado em app/models/__init__.py.
+  Migração 6ac2cc539f41 gerada e aplicada com sucesso; tabela
+  guest_badges existe no banco e os campos alterados de guests e
+  reservations foram confirmados via inspect. Durante a aplicação, a
+  primeira tentativa falhou por a constraint unique gerada pelo
+  autogenerate não ter nome (SQLite exige nome de constraint ao
+  recriar tabela em modo batch) — corrigido nomeando a constraint como
+  uq_guests_opera_guest_id no arquivo de migração. A falha deixou a
+  tabela guest_badges criada de forma órfã (SQLite roda DDL sem
+  transação); ela foi apagada manualmente (estava vazia) antes de
+  reaplicar a migração com sucesso.
 
 
 \## O que NÃO existe ainda
