@@ -9,11 +9,18 @@ reservas/hóspedes, conforme a ordem já prevista em "Etapas seguintes
 previstas" (item 3). Plano combinado em 2026-08-03, em 4 etapas:
 
 1. Alinhar schema ao já decidido — CONCLUÍDA em 2026-08-03 (ver
-   current-state.md e decision-log.md, entrada de 2026-08-03).
+   current-state.md e decision-log.md, entrada de 2026-08-03). Precisou
+   de uma revisão adicional antes de poder avançar: a revisão de escopo
+   combinada com a usuária (GuestBadge separado em badge de hóspede vs.
+   badge de estadia, ItemType, GuestLink e campos novos em Reservation)
+   mudava o desenho já migrado. Essa revisão adicional também está
+   CONCLUÍDA em 2026-08-03 (migração 730b36ea5422, ver current-state.md
+   e decision-log.md).
 2. Módulo isolado de importação (Opera Cloud), em
    app/integrations/opera_cloud/: parser do XML RES_DETAIL e lógica de
    upsert de Guest/Reservation/GuestBadge, com entradas em AuditLog.
-   PRÓXIMO PASSO.
+   LIBERADA PARA COMEÇAR — schema já está no estado final esperado para
+   esta etapa.
 3. Rota de upload (blueprint novo, Flask-WTF, @login_required),
    protegida, sem identidade visual ainda.
 4. Consulta de reservas/hóspedes (listagem e detalhe).

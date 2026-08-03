@@ -139,6 +139,27 @@ próxima sessão.
   tabela guest_badges criada de forma órfã (SQLite roda DDL sem
   transação); ela foi apagada manualmente (estava vazia) antes de
   reaplicar a migração com sucesso.
+- Revisão adicional de schema concluída (2026-08-03), decorrente da
+  revisão de escopo combinada com a usuária (ver decision-log.md,
+  entradas "Revisão de escopo: GuestBadge, campos de contato, ItemType e
+  templates de sugestão" e "Desenho revisado de schema: Category,
+  ItemType, StayBadge, GuestLink"). Migração 730b36ea5422 gerada,
+  corrigida (mesma classe de problema de nome de constraint da migração
+  anterior, desta vez em duas foreign keys sem nome, e um NOT NULL sem
+  server_default em reservations.contact_status) e aplicada com sucesso.
+  Verificado via flask db current (730b36ea5422, head) e via flask shell
+  (inspect(db.engine).get_table_names()):
+  - 5 tabelas novas: categories, stay_badges, item_types,
+    category_item_templates, guest_links.
+  - GuestBadge (app/models/guest_badge.py): campo label removido,
+    substituído por category_id (FK -> categories.id).
+  - VipItem (app/models/vip_item.py): novo campo item_type_id (FK ->
+    item_types.id, obrigatório); description deixou de ser obrigatório
+    (nullable=True), reservado para observação específica da instância
+    do item, já que o nome do item agora vem de ItemType.
+  - Reservation (app/models/reservation.py): novos campos confirmed_eta
+    (string HH:MM, opcional) e contact_status (string, default
+    "pendente").
 
 
 \## O que NÃO existe ainda
