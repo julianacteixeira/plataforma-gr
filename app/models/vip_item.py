@@ -9,7 +9,10 @@ class VipItem(db.Model):
     vip_plan_id = db.Column(
         db.Integer, db.ForeignKey("vip_plans.id"), nullable=False
     )
-    description = db.Column(db.String(255), nullable=False)
+    item_type_id = db.Column(
+        db.Integer, db.ForeignKey("item_types.id"), nullable=False
+    )
+    description = db.Column(db.String(255), nullable=True)
     cost = db.Column(db.Numeric(10, 2), nullable=True)
     responsible_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=False
@@ -26,6 +29,7 @@ class VipItem(db.Model):
     )
 
     vip_plan = db.relationship("VipPlan")
+    item_type = db.relationship("ItemType")
     responsible = db.relationship("User")
 
     def __repr__(self):

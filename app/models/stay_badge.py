@@ -2,11 +2,13 @@ from datetime import datetime, timezone
 from app.extensions import db
 
 
-class GuestBadge(db.Model):
-    __tablename__ = "guest_badges"
+class StayBadge(db.Model):
+    __tablename__ = "stay_badges"
 
     id = db.Column(db.Integer, primary_key=True)
-    guest_id = db.Column(db.Integer, db.ForeignKey("guests.id"), nullable=False)
+    reservation_id = db.Column(
+        db.Integer, db.ForeignKey("reservations.id"), nullable=False
+    )
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=False)
     source = db.Column(db.String(30), nullable=False)
     status = db.Column(db.String(20), nullable=False)
@@ -23,9 +25,9 @@ class GuestBadge(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    guest = db.relationship("Guest", foreign_keys=[guest_id])
+    reservation = db.relationship("Reservation")
     category = db.relationship("Category")
     created_by = db.relationship("User", foreign_keys=[created_by_id])
 
     def __repr__(self):
-        return f"<GuestBadge category_id={self.category_id} guest_id={self.guest_id}>"
+        return f"<StayBadge reservation_id={self.reservation_id} category_id={self.category_id}>"

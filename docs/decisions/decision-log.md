@@ -452,7 +452,164 @@ integração, e se o campo `Guest.vip_category` deveria ser removido agora.
 
 **Status:** Aprovado.
 
+## [2026-08-03] Revisão de escopo: GuestBadge, campos de contato, ItemType e templates de sugestão
+
+**Contexto:** revisão de funcionalidades feita com a usuária, comparando o
+pedido original com uma aplicação anterior (descartada) do mesmo domínio.
+O objetivo foi levantar funcionalidades reais da rotina de GR ainda não
+cobertas pelo modelo de dados atual. Código da aplicação anterior não foi
+reutilizado em nenhum momento — apenas comportamento funcional e imagens
+de interface serviram de referência.
+
+**Decisões:**
+
+1. **GuestBadge precisa ser revisado para separar badges por evento
+   (ligados à estadia) de badges por hóspede (persistentes).** Badges de
+   ocasião pontual (Aniversário, Lua de Mel, Romântico, Pacote, Fechamento,
+   Pedido de Desculpas) devem ficar ligados à reserva/estadia específica
+   (Reservation ou VipPlan), não ao Guest — do contrário, apareceriam
+   permanentemente em estadias futuras do mesmo hóspede, o que não reflete
+   a realidade. Badges de nível de fidelidade ou relação institucional
+   (Gold, Platinum, Diamond, ALL Signature, Colaborador Accor, Influencer,
+   Diretoria, Investidor) continuam ligados ao Guest, pois persistem entre
+   estadias. Esta decisão revisa a estrutura de GuestBadge aprovada em
+   2026-08-02 e substitui aquele desenho neste ponto específico.
+
+2. **Vínculo manual de perfis duplicados de hóspede entra no MVP**, como
+   tabela simples de vínculo entre dois registros de Guest (ex:
+   `hospede_principal_id` / `hospede_secundario_id`). A detecção
+   automática por similaridade de nome permanece pós-MVP (já registrada
+   como pendência em 2026-08-02).
+
+3. **Novos campos no MVP:**
+   - Guest: telefone e e-mail (opcionais), com aviso de dado sensível
+     (LGPD) na interface e função de exclusão desses dois campos
+     especificamente, sem apagar o restante do cadastro.
+   - Reservation: ETA confirmado manualmente (formato HH:MM, distinto do
+     ETA vindo do Opera Cloud); status de contato prévio (enum: pendente,
+     contatado, sem_resposta, confirmado).
+   - VipItem: categorização de custo (ex: "A&B" ou "Brindes"), necessária
+     para os relatórios financeiros do painel principal.
+
+4. **Nova entidade ItemType (cadastro leve de tipo de item).** Ao
+   registrar, num VipPlan, um item que nunca foi usado em nenhuma
+   vipagem anterior, o sistema deve solicitar o cadastro completo do
+   item antes de permitir seu uso: nome, custo padrão, e instrução de
+   montagem (texto livre, tipo "ficha técnica" — como o item deve ser
+   posicionado, se precisa de talher/guardanapo/taça etc.). Itens já
+   cadastrados ficam disponíveis para reaproveitamento em vipagens
+   futuras. VipItem passa a referenciar um ItemType, em vez de manter
+   `description` como texto totalmente livre. Esta é uma versão
+   simplificada do módulo "Catálogo" mencionado como pós-MVP — o
+   catálogo visual completo (fotos, checklist estruturado de montagem,
+   organização visual) permanece pós-MVP; o cadastro funcional mínimo
+   entra agora.
+
+5. **Campo Group (faixa 1–6) por categoria/badge**, representando nível
+   de custo/importância para visão gerencial futura (aproximação de
+   faixa de valor esperado por vipagem). Este campo é independente da
+   prioridade de sugestão de item (item 6, abaixo) e não deve ser usado
+   para decidir qual item sugerir.
+
+6. **Campo de prioridade de sugestão, por categoria (não por Group).**
+   Quando uma estadia se qualifica para mais de uma categoria/badge
+   simultaneamente, o sistema sugere automaticamente apenas o template de
+   item da categoria de maior prioridade nesse ranking — nunca a soma
+   automática de templates de categorias diferentes. A equipe pode
+   adicionar itens manualmente por cima da sugestão a qualquer momento.
+   Prioridade é definida caso a caso pela equipe (ex: Aniversário e
+   ALL Signature/All Kids tendem a prioridade alta, por serem
+   compromissos indispensáveis; outras categorias podem ter prioridade
+   mais baixa), sem relação fixa com o valor de Group.
+
+7. **Template de item por categoria, com variação binária por presença
+   de criança na reserva** (tem criança / não tem criança — nunca
+   escalona pela quantidade). A variação correta é aplicada
+   automaticamente na sugestão inicial do VipPlan; ajustes finos (ex:
+   um item por criança quando há mais de uma) são feitos manualmente
+   pela equipe depois da sugestão.
+
+**Impacto no trabalho já implementado:** o model GuestBadge, migrado com
+sucesso em 2026-08-03 (migração 6ac2cc539f41), precisa ser revisado antes
+do início do módulo de importação Opera Cloud (Etapa 2 do plano de
+2026-08-03), por conta da decisão 1 acima. A tabela guest_badges está
+vazia (nenhum dado real), então a revisão de schema não tem risco de
+perda de informação.
+
+**Status:** Aprovado.
+
+## [2026-08-03] Desenho revisado de schema: Category, ItemType, StayBadge, GuestLink
+
+**Contexto:** decorrente da entrada de decisão anterior deste mesmo dia
+("Revisão de escopo: GuestBadge, campos de contato, ItemType e templates
+de sugestão"), esta entrada fecha o desenho técnico das tabelas
+envolvidas, revisado em conjunto antes de qualquer implementação.
+
+**Decisões:**
+
+1. **Nova tabela Category**, substituindo o uso de texto livre como
+   categoria: `id`, `name`, `scope` ("guest" ou "stay"), `group_number`
+   (1 a 6, faixa de custo/importância), `suggestion_priority` (inteiro,
+   independente do group_number), `active` (boolean).
+
+2. **GuestBadge revisado** (migração de 2026-08-03, tabela ainda vazia,
+   revisão sem risco de perda de dado): troca o campo `label` (texto
+   livre) por `category_id` (FK → Category, restrito a categorias com
+   scope = "guest"). Mantém `source`, `status`, `created_by_id`,
+   `created_at`, `updated_at` como já estava.
+
+3. **Nova tabela StayBadge**, para categorias de evento (scope = "stay"):
+   `id`, `reservation_id` (FK → Reservation — não VipPlan, para preservar
+   o histórico agregado da estadia inteira mesmo quando há múltiplos
+   VipPlans na mesma reserva), `category_id`, `source`
+   ("keyword_suggestion" ou "manual"), `status` ("active", "suggested",
+   "rejected"), `created_by_id`, `created_at`, `updated_at`.
+
+4. **Nova tabela ItemType** (cadastro leve e reaproveitável de item):
+   `id`, `name` (único), `default_cost` (Numeric 10,2), `cost_category`
+   ("A&B", "Brindes" ou "Papelaria"), `assembly_instructions` (text),
+   `created_at`, `updated_at`. Ao cadastrar um item nunca antes usado
+   durante o preenchimento de um VipPlan, o sistema pergunta se deve
+   vinculá-lo imediatamente a uma Category (criando um
+   CategoryItemTemplate) ou deixá-lo solto, podendo ser incluído em um
+   template posteriormente.
+
+5. **Nova tabela CategoryItemTemplate**: `id`, `category_id` (FK →
+   Category), `item_type_id` (FK → ItemType), `requires_child` (boolean,
+   nullable — null significa indiferente à presença de criança; true/false
+   distingue a variação do item conforme presença de criança na reserva,
+   nunca por quantidade).
+
+6. **VipItem ajustado**: adiciona `item_type_id` (FK → ItemType,
+   obrigatório). O campo `description` deixa de ser o nome do item e
+   passa a ser opcional, reservado para observação específica daquela
+   instância do item na vipagem (ex: "sem açúcar"), sem duplicar o nome
+   já registrado em ItemType.
+
+7. **Nova tabela GuestLink** (vínculo manual de perfis duplicados):
+   `primary_guest_id` (FK → Guest), `secondary_guest_id` (FK → Guest),
+   `created_by_id` (FK → User), `created_at`.
+
+8. **Campos novos em tabelas existentes:**
+   - Reservation: `confirmed_eta` (string, formato HH:MM, opcional),
+     `contact_status` (string, default "pendente").
+
+   Nota de correção (2026-08-03): a versão original deste item também
+   listava `phone` e `email` como campos novos em Guest — redundante,
+   pois os dois já existem no model desde o início do projeto (nenhuma
+   mudança de schema necessária ali). O que de fato é novo é
+   comportamento de interface, ainda pendente (ver pendência abaixo, na
+   seção "Pendentes"), não uma mudança de schema.
+
+**Status:** Aprovado.
+
 ## Pendentes (a decidir em etapas futuras)
+
+\- Tela de perfil do hóspede (pós-MVP): exibir aviso visual de dado
+  sensível/LGPD ao lado dos campos `phone` e `email` de Guest, e
+  oferecer uma função específica que apaga apenas esses dois campos,
+  sem afetar o restante do cadastro. Não exige migração — os campos já
+  existem no model.
 
 \- Estrutura exata de pastas do repositório.
 
