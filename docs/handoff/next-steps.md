@@ -88,6 +88,20 @@ Ver detalhes em docs/handoff/current-state.md:
 
 
 
+\## Lições técnicas (não bloqueantes, para não repetir erro)
+
+- Migrações que usam `batch_alter_table` no SQLite (necessário para alterar
+  ou remover coluna) não são totalmente atômicas: o SQLite recria a tabela
+  por trás dos panos, e comandos anteriores da mesma migração podem já ter
+  sido aplicados mesmo que um comando posterior falhe. Se uma migração
+  falhar no meio, sempre rodar `flask db current` e conferir as tabelas
+  via `inspect(db.engine).get_table_names()` antes de tentar aplicar de
+  novo — pode ser necessário apagar manualmente um artefato órfão (tabela
+  criada pela tentativa anterior) antes de reaplicar. Caso registrado em
+  2026-08-03, migração 6ac2cc539f41 (guest_badges).
+
+
+
 \## Etapas seguintes previstas (nesta ordem)
 
 . Estrutura de pastas do projeto + Git/GitHub privado.
