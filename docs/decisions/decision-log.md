@@ -743,6 +743,76 @@ decididas depois do resultado da sessão de UX.
 **Status:** Aprovado (registro de contexto). Pendências geradas por
 esta decisão aguardam fluxo de UX.
 
+## [2026-08-06] Decisões técnicas derivadas da entrevista de fluxo/UX
+
+**Contexto:** sessão de entrevista de UX (fora deste ambiente) desenhou
+em texto o fluxo principal de telas do sistema (Chegadas, Guests in
+House, Home, Planejamento de Vipagem, Requisição Semanal, Perfil do
+Hóspede, Catálogo/Pacotes). Esta entrada registra apenas as decisões
+com implicação direta em schema, levantadas durante a revisão técnica
+desse resultado. As decisões puramente visuais/de fluxo ficam
+registradas em docs/design/design-system.md e
+docs/design/approved-ui-notes.md; a lista de novas telas e
+funcionalidades fica registrada em docs/product/backlog.md.
+
+**Decisões:**
+
+1. **Novo campo `VipPlan.ready_for_delivery`** (boolean, default False).
+   Representa o toggle "Tudo pronto" da seção "VIPs do dia" — um
+   checkpoint de revisão diária, distinto de `delivery_status` (que
+   continua controlando a confirmação real de entrega via botão
+   "Marcar como entregue", só habilitado depois que
+   ready_for_delivery = True). O toggle desliga automaticamente a cada
+   edição feita no VipPlan após já estar ligado, forçando nova revisão
+   humana. Comportamento de rota, a implementar na fase técnica; cada
+   desligamento automático deve gerar entrada em AuditLog.
+
+2. **Sistema de Requisição Semanal usa vínculo explícito, não
+   comparação de datas.** Cada VipItem incluído numa requisição recebe
+   um `requisition_id` (FK, nullable) no momento em que a requisição é
+   gerada — não apenas uma comparação de timestamps. A condição
+   "aguardando próxima requisição" (exibida como contador na Home) é
+   avaliada **por cost_category** (A&B, Brindes e Papelaria têm
+   frequência de pedido diferente, portanto requisições e contadores
+   são independentes por categoria). Detalhamento completo do model
+   WeeklyRequisition fica para a migração dedicada a essa
+   funcionalidade.
+
+3. **Pacote tem preço padrão editável por venda.** `Package.default_price`
+   existe no cadastro do Pacote; o valor efetivamente cobrado é
+   registrado por venda (em uma tabela própria de venda/registro,
+   detalhada na migração dedicada a Catálogo/Pacotes) e pode divergir
+   do padrão.
+
+4. **Anotações livres da equipe (post-its da Home) persistem no
+   banco**, em tabela simples (sem necessidade de campos estruturados
+   além de conteúdo e autoria), visíveis para toda a equipe (não
+   individuais), e permanecem até serem excluídas manualmente. A
+   redação original da entrevista ("sem necessidade de estrutura de
+   banco de dados") foi esclarecida nesta revisão como referindo-se à
+   ausência de complexidade de modelo, não à ausência de persistência.
+
+5. **Nova tabela `InstitutionalDate`** para marcações do mini-calendário
+   da Home (feriados, reuniões, fechamentos do resort — eventos
+   institucionais, não eventos de hóspede/VipPlan). Campos: id, date,
+   name, color, created_by_id, created_at. Sem campo de descrição
+   longa, por decisão de manter a marcação só visual.
+
+6. **Novo campo `Guest.preferences`** (texto livre), seguindo o mesmo
+   padrão já usado em campos ainda não estruturados do projeto (ex:
+   Reservation.notes).
+
+**Escopo novo identificado, ainda sem detalhamento técnico completo**
+(a receber migração e entrada de decisão própria em sessão futura):
+- Tela "Guests in House" (não implica schema novo — é uma visão sobre
+  Reservation já existente, filtrada por check_in < hoje <= ETD do
+  check_out).
+- Sistema de Catálogo/Pacotes completo (Package, PackageItemTemplate,
+  registro de venda).
+- Sistema de Requisição Semanal completo (WeeklyRequisition).
+
+**Status:** Aprovado.
+
 ## Pendentes (a decidir em etapas futuras)
 
 \- Tela de perfil do hóspede (pós-MVP): exibir aviso visual de dado
