@@ -603,6 +603,107 @@ envolvidas, revisado em conjunto antes de qualquer implementação.
 
 **Status:** Aprovado.
 
+## [2026-08-06] Fechamento definitivo: Category — scope, grupo, prioridade, always_apply, manual_only
+
+**Contexto:** conclusão da revisão de Category iniciada em 2026-08-03, que
+ficou pendente em next-steps.md. Fecha as últimas classificações em aberto
+(scope de 4 categorias, grupo de IBIOBI/Habitué, correção de tier do IBIOBI)
+e formaliza dois campos booleanos novos no model Category.
+
+**Novos campos em Category:**
+- `always_apply` (boolean, default False): quando True, a categoria soma
+  itens automaticamente com todas as outras always_apply presentes na
+  mesma sugestão, ignorando completamente o ranking normal de
+  suggestion_priority. Categorias always_apply nunca competem entre si.
+- `manual_only` (boolean, default False): quando True, a categoria nunca
+  entra automaticamente na sugestão (nem via always_apply, nem via
+  ranking normal) — só aparece se a equipe a ativar manualmente naquele
+  VipPlan específico. Seu suggestion_priority, quando existir, serve
+  apenas para posicionamento visual na tela, sem efeito na lógica
+  automática.
+
+**Regra de interação consolidada:**
+1. Se qualquer categoria always_apply=True estiver presente, o sistema
+   soma os itens de todas as always_apply presentes e ignora o ranking
+   normal, exceto por adições manuais feitas pela equipe.
+2. Se nenhuma always_apply estiver presente, o sistema usa o ranking
+   normal (suggestion_priority 1-21); só a categoria de maior prioridade
+   entre as presentes vence — as demais não aparecem automaticamente.
+3. Categorias manual_only=True nunca entram nos passos 1 ou 2.
+
+**Correção de classificação: IBIOBI sai do grupo always_apply.**
+Levantamento inicial listava IBIOBI entre as 7 categorias sempre-
+-prioritárias. Revisão com a usuária mostrou que não há gasto padrão
+associado a hóspedes IBIOBI (clube de fidelidade Senpar/TS Itu já envia
+os brindes prontos; a atuação do GR é só entrega, já que esses hóspedes
+não têm acesso a quartos). Além disso, reservas IBIOBI não vêm do
+relatório padrão de importação — chegam por planilha separada do clube
+de fidelidade, recebida 2+ vezes por semana. Sem gatilho automático
+possível (nem keyword, nem badge de import) e sem gasto padrão a somar,
+IBIOBI é reclassificado como manual_only. O tier always_apply passa de
+7 para 6 categorias.
+
+**Scope definido para as 4 categorias pendentes:**
+- Atenção Especial → stay. Categoria genérica para motivos de vipagem
+  sinalizados nas notes da reserva que não justificam categoria própria.
+  Não persiste entre estadias.
+- Pax Querido → guest, manual_only. Significa que o pax é querido da
+  equipe (relação pessoal, não institucional) — persiste entre
+  hospedagens do mesmo hóspede, mas nunca entra automaticamente no
+  planejamento; exige ativação manual em cada estadia específica.
+- Convidados Gerência → stay. Reserva pedida por alguém da gerência.
+  Fonte majoritariamente manual — notes têm sinalização muito variável,
+  não compensa tentar keyword_suggestion aqui.
+- Voucher Novos Colaboradores → stay, always_apply, grupo 7. Ligado à
+  chegada específica do colaborador novo, não à pessoa em si. Template
+  de item já levantado: carta nominal, necessaire Coca-Cola, voucher
+  tirolesa, gift drink (podendo incluir cartinha à mão dos colegas).
+
+**Festa Junina não vira categoria própria.** Cai dentro de Ações
+(already always_apply): sempre que houver VIP solicitado pela equipe de
+MICE/Marketing/etc., sem sugestão automática de itens (acordo pontual
+caso a caso).
+
+**Habitué/Habituée:** entra como badge normalmente (source stay_count,
+sugerido a partir de 5+ reservas do mesmo opera_guest_id), disputa
+suggestion_priority = 2 no ranking normal, grupo 8 (mesmo grupo de
+Ações). Nunca terá CategoryItemTemplate vinculado — quando vence a
+disputa, a lista de sugestão fica intencionalmente vazia, forçando
+preenchimento manual pela equipe (esses hóspedes já recebem muito ao
+longo do relacionamento com o hotel, então cada vipagem é avaliada caso
+a caso).
+
+**suggestion_priority passa a ser nullable=True** (migração aea187b152c4).
+Categorias always_apply não têm posição no ranking — ficam com o campo
+vazio (None), refletindo que a competição por prioridade simplesmente
+não se aplica a elas, em vez de usar um valor numérico sentinela sem
+sentido.
+
+**Palavras-chave adicionais confirmadas** (complementam a lista fixa
+inicial da decisão de 2026-08-02, futuramente migradas para
+CategoryKeyword):
+- "prever mimo", "prever vip", "vip", "mimo" → Atenção Especial, MAS
+  apenas quando não acompanhadas de outra palavra-chave mais específica
+  na mesma nota (ex: "Aniversário da Solange dia 06/08 - prever mimo
+  simbólico" deve casar com Aniversário, não Atenção Especial).
+- "lua de mel", "romântico", "romantico" → Comemorações (não vira
+  categoria própria "Lua de Mel/Romântico" para fins de keyword; a
+  categoria Lua de Mel/Romântico permanece no ranking com
+  suggestion_priority=12 para os casos identificados manualmente, mas a
+  detecção automática por keyword aponta para Comemorações).
+
+**Tabela final de categorias (28 no total: 6 always_apply, 2
+manual_only, 20 no ranking normal 1-21) — scope, grupo, always_apply,
+manual_only, suggestion_priority:** ver tabela consolidada em
+docs/technical/data-model.md (atualização pendente, próxima etapa) e
+no histórico de conversa da sessão de fechamento.
+
+**Migração aplicada:** aea187b152c4 (revises 730b36ea5422), 2026-08-06.
+Cria category_keywords; adiciona always_apply e manual_only a
+categories; altera suggestion_priority para nullable.
+
+**Status:** Aprovado.
+
 ## Pendentes (a decidir em etapas futuras)
 
 \- Tela de perfil do hóspede (pós-MVP): exibir aviso visual de dado
