@@ -7,7 +7,25 @@
 Revisão de Category concluída em 2026-08-06 (migração aea187b152c4). Ver
 docs/decisions/decision-log.md, entrada "[2026-08-06] Fechamento
 definitivo: Category — scope, grupo, prioridade, always_apply,
-manual_only".
+manual_only". Seed das 28 categorias também concluído em 2026-08-06, via
+comando `flask seed-categories`.
+
+
+
+\## Pendência em andamento: fluxo de UX/telas (não implementar ainda)
+
+Sessão de 2026-08-06 abriu uma entrevista de UX em paralelo (fora deste
+ambiente) para desenhar em texto o fluxo principal de telas: tela de
+"Chegadas" (lista de reservas do dia/período com indicação de badge),
+painel principal, tela de planejamento de vipagem (incluindo se
+VipPlan precisa de um segundo campo de status, distinto de
+delivery_status, para representar "planejamento sem conflito de
+estoque, pronto para entrega" separado de "efetivamente entregue"),
+relatório de requisição semanal em XLSX (filtrável por período, base
+para o memorando de requisição à loja física do hotel — ver decisão de
+06/08 sobre fim do estoque físico próprio), e tela de perfil do
+hóspede. NÃO alterar models, telas ou rotas até a usuária trazer o
+resultado consolidado dessa entrevista.
 
 
 

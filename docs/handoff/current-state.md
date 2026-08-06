@@ -170,6 +170,11 @@ próxima sessão.
   - Category (app/models/category.py): novos campos always_apply e
     manual_only (boolean, default False, nullable=False); campo
     suggestion_priority alterado para nullable=True.
+- Comando `flask seed-categories` criado (app/seeds/categories.py,
+  registrado em app/__init__.py) e executado com sucesso: 28 categorias
+  populadas na tabela categories (6 always_apply, 2 manual_only, 20 no
+  ranking normal de suggestion_priority 1-21). Confirmado via flask
+  shell: Category.query.count() = 28.
 
 
 \## O que NÃO existe ainda
@@ -180,6 +185,9 @@ próxima sessão.
 - Exportação em XLSX.
 - Nenhum dado de teste no banco: as 6 tabelas existem, mas estão todas
   vazias.
+- CategoryKeyword ainda está vazia (model e tabela existem, seed de
+  palavras-chave pendente — depende do resultado da sessão de UX em
+  andamento sobre o fluxo de reconhecimento de reservas VIP).
 
 
 
