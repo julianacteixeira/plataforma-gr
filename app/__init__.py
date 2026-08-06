@@ -30,4 +30,12 @@ def create_app():
     def painel():
         return f"Bem-vindo, {current_user.name}! (rota protegida)"
 
+    @app.cli.command("seed-categories")
+    def seed_categories_command():
+        """Popula a tabela categories com as 28 categorias de VIP definidas."""
+        from app.seeds.categories import run
+        criadas, atualizadas = run()
+        print(f"Categorias criadas: {criadas}")
+        print(f"Categorias atualizadas: {atualizadas}")
+
     return app
