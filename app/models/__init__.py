@@ -1,5 +1,6 @@
 from app.models.user import User
 from app.models.category import Category
+from app.models.category_keyword import CategoryKeyword
 from app.models.guest import Guest
 from app.models.guest_badge import GuestBadge
 from app.models.guest_link import GuestLink
