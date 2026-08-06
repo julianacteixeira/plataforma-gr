@@ -704,6 +704,45 @@ categories; altera suggestion_priority para nullable.
 
 **Status:** Aprovado.
 
+## [2026-08-06] Mudança confirmada: fim do estoque físico próprio de itens de vipagem
+
+**Contexto:** a usuária confirmou que, em até 10 dias a partir desta
+data, deixará de manter estoque físico próprio dos itens usados em
+vipagens. Os itens passarão a ficar centralizados numa loja física do
+hotel, e a equipe de GR precisará fazer requisições semanais por
+memorando — processo já existente e familiar, similar ao que já é
+feito hoje para pedidos de A&B.
+
+**Impacto no produto:** planejamento antecipado e preciso passa a ser
+ainda mais crítico do que já era, já que decisões de vipagem agora
+alimentam diretamente um processo formal de requisição, não apenas um
+controle interno de custo.
+
+**Decisões tomadas nesta entrada:**
+- `ItemType.cost_category` (já existente: "A&B", "Brindes", "Papelaria")
+  permanece necessário — usado tanto para métricas ao Comitê quanto
+  como possível campo de agrupamento no futuro relatório de requisição.
+- Novo item de backlog: relatório de requisição semanal em XLSX,
+  filtrável por período (data inicial/final), somando a quantidade de
+  cada item planejado no intervalo — para virar a base do memorando de
+  requisição à loja física. Detalhes de agrupamento (por item, por
+  cost_category, ou ambos) e de quais status de VipPlan/VipItem entram
+  na contagem ficam para a sessão de desenho de fluxo/UX em andamento.
+- Identificada possível necessidade de um segundo status em VipPlan,
+  distinguindo "planejamento sem conflito de estoque, pronto para
+  entrega assim que o quarto estiver disponível" de "efetivamente
+  entregue" — hoje o modelo só tem `delivery_status`. Não decidido
+  ainda; aguarda resultado da sessão de UX em andamento antes de
+  qualquer mudança de schema.
+
+**Não é uma decisão de schema ainda** — só registro de contexto de
+negócio confirmado e dos itens de backlog/pendência que essa mudança
+gera. Mudanças em VipPlan/VipItem/ItemType, se necessárias, serão
+decididas depois do resultado da sessão de UX.
+
+**Status:** Aprovado (registro de contexto). Pendências geradas por
+esta decisão aguardam fluxo de UX.
+
 ## Pendentes (a decidir em etapas futuras)
 
 \- Tela de perfil do hóspede (pós-MVP): exibir aviso visual de dado
