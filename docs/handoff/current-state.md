@@ -160,6 +160,16 @@ próxima sessão.
   - Reservation (app/models/reservation.py): novos campos confirmed_eta
     (string HH:MM, opcional) e contact_status (string, default
     "pendente").
+- Fechamento definitivo da revisão de Category concluído (2026-08-06; ver
+  decision-log.md, entrada "[2026-08-06] Fechamento definitivo: Category
+  — scope, grupo, prioridade, always_apply, manual_only"). Migração
+  aea187b152c4 gerada e aplicada com sucesso. Verificado via flask db
+  current (aea187b152c4, head) e via flask shell
+  (inspect(db.engine).get_table_names()):
+  - 1 tabela nova: category_keywords.
+  - Category (app/models/category.py): novos campos always_apply e
+    manual_only (boolean, default False, nullable=False); campo
+    suggestion_priority alterado para nullable=True.
 
 
 \## O que NÃO existe ainda

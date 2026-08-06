@@ -2,32 +2,12 @@
 
 
 
-\## Pendência em andamento: revisão de Category (não aplicar ainda)
+\## Category: revisão concluída
 
-Sessão de 2026-08-03 (parte 2) levantou, em conversa fora deste ambiente,
-uma revisão do desenho de Category ainda EM ABERTO — não aprovada, não
-implementada. Retomar assim que a usuária trouxer o fechamento.
-
-O que já está decidido (mas não implementado):
-- Category ganha dois campos booleanos novos: `always_apply` (categorias
-  que somam itens entre si e ignoram o ranking normal quando presentes -
-  ex: ALL Signature Zen Day/Fondue/ALL Kids, Voucher Novos Colaboradores,
-  Ações, Pacote Contratado) e `manual_only` (categorias que nunca entram
-  automaticamente na sugestão, só se a equipe ativar manualmente naquele
-  VipPlan - ex: IBIOBI, Pax Querido).
-- Nova tabela CategoryKeyword (id, category_id FK, keyword string, active
-  boolean, created_by_id FK, created_at) — substitui a lista fixa de
-  keywords no código da decisão de 02/08, tornando-a editável.
-- Lista quase completa de ~27 categorias com scope, group_number (1-9) e
-  suggestion_priority definidos — AINDA FALTA: grupo do IBIOBI, grupo do
-  Habitué/Habituée, e confirmação final do grupo de Convidados Gerência
-  (revisado para grupo 3 na última troca, pendente confirmação).
-- Tabela de palavras-chave (CategoryKeyword) ainda não foi levantada -
-  só alguns exemplos soltos apareceram na conversa (prever mimo, voucher
-  novos colaboradores, ação de festa junina, lua de mel/romântico).
-
-NÃO gerar migração nem alterar models até a usuária confirmar que esta
-lista está 100% fechada.
+Revisão de Category concluída em 2026-08-06 (migração aea187b152c4). Ver
+docs/decisions/decision-log.md, entrada "[2026-08-06] Fechamento
+definitivo: Category — scope, grupo, prioridade, always_apply,
+manual_only".
 
 
 
