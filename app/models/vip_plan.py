@@ -13,6 +13,7 @@ class VipPlan(db.Model):
     room_number_override = db.Column(db.String(20), nullable=True)
     status = db.Column(db.String(30), nullable=False)
     delivery_status = db.Column(db.String(30), nullable=False)
+    ready_for_delivery = db.Column(db.Boolean, nullable=False, default=False)
     delivered_at = db.Column(db.DateTime, nullable=True)
     delivered_by_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=True
