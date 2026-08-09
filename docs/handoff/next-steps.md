@@ -17,15 +17,26 @@ comando `flask seed-categories`.
 Sessão de 2026-08-06 abriu uma entrevista de UX em paralelo (fora deste
 ambiente) para desenhar em texto o fluxo principal de telas: tela de
 "Chegadas" (lista de reservas do dia/período com indicação de badge),
-painel principal, tela de planejamento de vipagem (incluindo se
+painel principal, tela de planejamento de vipagem (a pergunta sobre se
 VipPlan precisa de um segundo campo de status, distinto de
 delivery_status, para representar "planejamento sem conflito de
-estoque, pronto para entrega" separado de "efetivamente entregue"),
+estoque, pronto para entrega" separado de "efetivamente entregue", já
+foi RESOLVIDA em 2026-08-09 — implementada como
+VipPlan.ready_for_delivery, commit 5862c5c; ver current-state.md),
 relatório de requisição semanal em XLSX (filtrável por período, base
 para o memorando de requisição à loja física do hotel — ver decisão de
 06/08 sobre fim do estoque físico próprio), e tela de perfil do
-hóspede. NÃO alterar models, telas ou rotas até a usuária trazer o
-resultado consolidado dessa entrevista.
+hóspede. NÃO alterar models, telas ou rotas dessas telas ainda
+pendentes até a usuária trazer o resultado consolidado dessa
+entrevista.
+
+Duas outras mudanças de schema já decididas nessa mesma entrevista
+(decision-log.md, entrada de 2026-08-06, itens 5 e 6) também foram
+implementadas em 2026-08-09: `Guest.preferences` (commit 50c97c9) e a
+nova tabela `institutional_dates` (commit bf2005e) — ver
+current-state.md. As telas em si (Chegadas, painel principal,
+planejamento de vipagem, requisição semanal, perfil do hóspede)
+continuam pendentes de desenho e implementação.
 
 
 

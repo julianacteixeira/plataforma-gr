@@ -175,6 +175,36 @@ próxima sessão.
   populadas na tabela categories (6 always_apply, 2 manual_only, 20 no
   ranking normal de suggestion_priority 1-21). Confirmado via flask
   shell: Category.query.count() = 28.
+- Três mudanças de schema derivadas da entrevista de UX (ver
+  decision-log.md, entrada "[2026-08-06] Decisões técnicas derivadas da
+  entrevista de fluxo/UX", itens 1, 5 e 6) implementadas em 2026-08-09:
+  - VipPlan (app/models/vip_plan.py): novo campo `ready_for_delivery`
+    (Boolean, nullable=False, default=False), representando o toggle
+    "Tudo pronto" da seção "VIPs do dia", distinto de `delivery_status`.
+    Migração c70c5df8e7e3 gerada e aplicada com sucesso; a tabela
+    vip_plans estava vazia no momento (confirmado por teste:
+    VipPlan.query.first() retornou None), mas por ser uma tabela já
+    existente em uso (não uma tabela nova), o `add_column` foi ajustado
+    manualmente para incluir `server_default=sa.false()` como medida de
+    segurança preventiva — o SQLite exige um valor padrão para adicionar
+    coluna NOT NULL numa tabela já existente, independente de ela estar
+    vazia ou não no momento (autogenerate do Alembic não inclui isso
+    sozinho). Commit 5862c5c.
+  - Guest (app/models/guest.py): novo campo `preferences` (Text,
+    nullable=True), mesmo padrão de campo de texto livre já usado em
+    Reservation.notes. Migração c578ecdb4876 gerada e aplicada com
+    sucesso (sem necessidade de server_default, por ser nullable).
+    Commit 50c97c9.
+  - Nova tabela institutional_dates: model InstitutionalDate criado em
+    app/models/institutional_date.py (id, date, name, color, FK
+    created_by_id -> users.id, created_at; relationship created_by sem
+    foreign_keys=[...] por não haver ambiguidade de FK para users nesse
+    model), registrado em app/models/__init__.py. Migração 33570eac56c8
+    gerada e aplicada com sucesso. Commit bf2005e.
+  Verificado via `flask db current` após cada etapa (estado final:
+  33570eac56c8, head) e via consultas manuais em cada model (todas as
+  três tabelas retornaram vazias, como esperado — nenhum dado de teste
+  no banco ainda).
 
 
 \## O que NÃO existe ainda
