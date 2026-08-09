@@ -11,3 +11,4 @@ from app.models.category_item_template import CategoryItemTemplate
 from app.models.vip_plan import VipPlan
 from app.models.vip_item import VipItem
 from app.models.audit_log import AuditLog
+from app.models.institutional_date import InstitutionalDate
