@@ -15,6 +15,7 @@ class Guest(db.Model):
     all_member = db.Column(db.Boolean, default=False, nullable=False)
     all_card_number = db.Column(db.String(50), nullable=True)
     pmid = db.Column(db.String(50), nullable=True)
+    preferences = db.Column(db.Text, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
