@@ -813,6 +813,155 @@ funcionalidades fica registrada em docs/product/backlog.md.
 
 **Status:** Aprovado.
 
+## [2026-08-12] Modelo de dados do Memorando (substitui WeeklyRequisition)
+
+**Contexto:** sessão de planejamento dedicada, motivada pela transição do
+estoque físico de itens de vipagem para requisição formal na loja do
+hotel. Partiu da análise da rotina real de memorandos (exemplos reais em
+PDF/XLSX da pasta `23. MEMORANDO` do OneDrive, sem dados reais de
+hóspede mantidos neste documento) antes de qualquer desenho técnico.
+
+**Decisões:**
+
+1. **Nome definitivo: `Memorando`.** O nome provisório `WeeklyRequisition`
+   é abandonado. Não existe período fixo (semanal ou outro) embutido no
+   nome nem na estrutura — o período coberto por cada memorando é
+   escolhido no momento da geração, não é uma regra do sistema. Loja
+   entra como mais um setor de destino possível, não como um processo à
+   parte.
+
+2. **Dois tipos de Memorando, mesma tabela, campo `tipo` distingue:**
+   - **Tipo A ("consolidado"):** agrega itens de vários VipPlans
+     diferentes, filtrados por setor de preparo + data de entrega (ex:
+     "Cozinha, 11/08"). Corresponde aos memorandos VIP Cozinha, VIP
+     Confeitaria, A&B do dia a dia.
+   - **Tipo B ("pacote"):** sempre vinculado a exatamente um `VipPlan`
+     (nunca agrupa mais de um). Usado para bolos e pacotes contratados
+     (Kit Festa, Pacote Romântico etc.), que exigem campos adicionais de
+     venda. Um memorando Tipo B pode conter linhas de mais de um setor
+     dentro do mesmo documento (ex: Confeitaria e A&B juntos, como no Kit
+     Festa).
+   - Decisão tomada por medo concreto de perda de rastreabilidade caso um
+     único memorando combinasse itens de VipPlans diferentes no Tipo B:
+     risco de a confeitaria descartar o memorando após entregar um item
+     e "perder" outro pacote que estivesse no mesmo documento, ou de
+     duplicar a entrega de um item já feito.
+
+3. **Tabela `Memorando` (cabeçalho):**
+   - `id`
+   - `tipo` ("consolidado" ou "pacote")
+   - `vip_plan_id` — obrigatório apenas quando `tipo = "pacote"`; nulo em
+     "consolidado"
+   - `version_number` — inteiro, começa em 1
+   - `previous_version_id` — FK para a versão anterior da mesma
+     "linhagem" de memorando; nulo na v1. Nenhuma versão é apagada.
+   - `status_versao` — indica se esta é a versão vigente ou se foi
+     "substituída" por uma versão mais nova. Versões substituídas
+     continuam no banco (nunca apagadas) mas só aparecem nas telas
+     quando o histórico é explicitamente consultado; por padrão, o
+     sistema mostra apenas a versão vigente de cada linhagem.
+   - `responsavel_interno_id` (FK → User) — quem assume a
+     responsabilidade pelo conteúdo do memorando perante o setor
+     executor. Campo do CONTEÚDO do documento, editável livremente
+     enquanto o memorando não foi exportado. Pode ser uma pessoa
+     diferente de quem operou o sistema (ex: alguém pede para Juliana
+     gerar um memorando do qual outra pessoa da equipe será a
+     responsável).
+   - `generated_by_id` (FK → User), `generated_at` — METADADO técnico de
+     auditoria (quem operou o sistema e quando), nunca aparece no
+     arquivo exportado, nunca editável.
+   - `data_pedido`
+   - `observacao` (texto livre — ex: "lançar na CI VIP Hospedagem - VIP
+     FAMÍLIA BAUDUCCO")
+   - `exported_at` — nulo até a primeira exportação; uma vez preenchido,
+     TODO o conteúdo do memorando (incluindo `responsavel_interno_id`)
+     vira imutável. Qualquer mudança de conteúdo após a exportação exige
+     gerar uma nova versão (v+1), nunca editar a versão exportada.
+   - Campos exclusivos de `tipo = "pacote"` (nulos em "consolidado"):
+     `forma_pagamento`, `valor_total`, `pax_adultos`,
+     `pax_criancas_6_12`, `pax_criancas_ate_5`.
+   - `forma_pagamento`: texto livre nesta fase (mesmo padrão adotado para
+     outros campos de status controlado no projeto), com quatro valores
+     válidos já identificados pela usuária: "Pagamento antecipado"
+     (cobrado com a Juliana ou com Reservas, antes do lançamento),
+     "Pagamento no checkout" (cobrado no front desk, na saída, após
+     lançamento), "Cortesia" (cobrança interna na CI VIP Hospedagem),
+     "Faturamento IBIOBI" (cobrança na Conta Master do Clube de Férias
+     IBIOBI, fechamento semanal). Observação registrada para o futuro
+     (não bloqueia esta decisão): "Cortesia" e "Faturamento IBIOBI"
+     apontam para centros de custo diferentes; se um dia for necessário
+     relatório segmentado por centro de custo, pode valer a pena um
+     campo próprio `centro_de_custo` — avaliar quando a necessidade for
+     concreta.
+
+4. **Tabela `MemorandoLine` (linhas), nova:**
+   - `id`, `memorando_id` (FK)
+   - `vip_item_id` — nulo quando a linha for um item avulso/de sobra,
+     sem vínculo a nenhum VipPlan (buffer para momentos de correria);
+     preenchido quando a linha vem de um VipItem real e existente.
+   - `item_type_id` — sempre preenchido, mesmo em linha vinculada a um
+     VipItem, para facilitar consulta e agrupamento sem precisar navegar
+     até o VipItem de origem.
+   - `quantidade`
+   - `data_entrega` — campo PRÓPRIO da linha, independente do
+     `planned_date` do VipPlan de origem. Motivo: itens perecíveis
+     costumam ser pedidos para entrega no mesmo dia do uso, enquanto
+     outros itens podem ser pedidos com antecedência e guardados.
+   - `horario` (opcional)
+   - `pax` (opcional, sempre digitado manualmente — nunca puxado
+     automaticamente da Reservation, pois pode divergir do número de
+     hóspedes da reserva, ex: festas com convidados externos)
+   - `descricao_observacao` (texto livre da linha, ex: "montar na Sala
+     4")
+   - Uma linha vinculada a um VipItem preserva, em cada versão gerada, a
+     lista exata de VipItems que compunham aquele total no momento da
+     geração — isto é o que permite reconstruir, meses depois, por que
+     uma quantidade específica foi pedida (ex: "por que pedimos 9
+     tábuas e não 8"), mesmo que um dos VipPlans de origem tenha sido
+     alterado ou cancelado posteriormente.
+
+5. **Novo campo em `ItemType`: `preparation_sector`.** Valores
+   identificados: Cozinha, Confeitaria, A&B (Restaurante/Bares — setor
+   físico do hotel, não confundir com a `cost_category` "A&B" que é
+   classificação interna de custo), Recepção, Loja. É este campo — e não
+   um campo repetido no cabeçalho do Memorando — que determina o setor
+   de cada linha, permitindo que um único Memorando Tipo B agregue
+   linhas de setores diferentes no mesmo documento.
+
+6. **Exportação e trava de edição.** O sistema não substitui a pasta do
+   OneDrive como destino final — a usuária continua exportando o
+   arquivo (Excel/PDF) para lá manualmente. O que muda: (a) o sistema
+   registra internamente quando e por quem cada versão foi gerada
+   (`generated_by_id`/`generated_at`); (b) o arquivo exportado sai
+   travado — somente leitura, editável apenas pelo usuário da usuária —
+   para impedir o comportamento observado hoje de outras pessoas
+   pesquisarem "memorando" no Explorer e sobrescreverem o primeiro
+   arquivo encontrado. Dentro do sistema, "editar" nunca significa
+   alterar um memorando já exportado — significa gerar uma nova versão,
+   recalculada a partir do estado atual dos VipPlans, preservando a
+   versão anterior intacta no histórico.
+
+**Pendência registrada para a fase de implementação (não bloqueia o
+fechamento desta sessão):** a formatação exata do arquivo exportado
+(layout, cores, larguras de coluna, fontes) deve seguir o padrão visual
+já em uso nos modelos reais da usuária (Memorando VIP Cozinha, VIP
+Confeitaria, A&B, Bolo/Kit Festa). Essa decisão será tomada durante a
+implementação, com os arquivos originais como referência direta, e não
+neste documento.
+
+**Alternativas consideradas:**
+- Guardar no Memorando apenas o resultado agregado (sem apontar para os
+  VipItems de origem, linha a linha) — rejeitado por quebrar a
+  rastreabilidade granular que é princípio central do projeto.
+- Permitir que um Memorando Tipo B agrupe itens de mais de um VipPlan —
+  rejeitado pelo risco concreto de perda ou duplicidade de entrega
+  relatado pela usuária.
+- Tratar a Loja como um fluxo de requisição separado do Memorando comum
+  — rejeitado; Loja é apenas mais um valor de `preparation_sector`.
+
+**Status:** Aprovado.
+
+
 ## Pendentes (a decidir em etapas futuras)
 
 \- Tela de perfil do hóspede (pós-MVP): exibir aviso visual de dado
