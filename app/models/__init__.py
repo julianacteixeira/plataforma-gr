@@ -12,3 +12,5 @@ from app.models.vip_plan import VipPlan
 from app.models.vip_item import VipItem
 from app.models.audit_log import AuditLog
 from app.models.institutional_date import InstitutionalDate
+from app.models.memorando import Memorando
+from app.models.memorando_line import MemorandoLine

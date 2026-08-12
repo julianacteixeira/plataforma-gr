@@ -38,6 +38,26 @@ current-state.md. As telas em si (Chegadas, painel principal,
 planejamento de vipagem, requisição semanal, perfil do hóspede)
 continuam pendentes de desenho e implementação.
 
+Atualização de 2026-08-12: o desenho de schema do memorando de
+requisição citado acima foi fechado nesta data (decision-log.md,
+entrada "[2026-08-12] Modelo de dados do Memorando (substitui
+WeeklyRequisition)") e já está implementado. Models `Memorando`
+(app/models/memorando.py) e `MemorandoLine`
+(app/models/memorando_line.py) criados, registrados em
+app/models/__init__.py, e migrados com sucesso (migração c4572c5bb013,
+"Cria tabelas de memorando e adiciona preparation_sector", aplicada em
+2026-08-12) — ver current-state.md. Na mesma migração, ItemType também
+ganhou o campo `preparation_sector` (nullable=True, sem default — itens
+já cadastrados ficam vazios até revisão manual, item a item).
+
+O que ainda NÃO existe, apesar do schema estar pronto: nenhuma rota,
+nenhum formulário, nenhuma lógica de geração de memorando, nenhum
+cálculo de agregação de linhas por setor + data de entrega, e nenhuma
+lógica de versionamento (gerar v2 a partir de v1, preencher
+previous_version_id, travar edição depois de exported_at). Só as
+tabelas existem — essa frente continua fora de "Próxima etapa a
+executar" abaixo até a usuária decidir priorizá-la.
+
 
 
 \## Próxima etapa a executar

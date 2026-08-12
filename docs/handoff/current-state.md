@@ -2,7 +2,7 @@
 
 
 
-\*\*Última atualização:\*\* 2026-08-02
+\*\*Última atualização:\*\* 2026-08-12
 
 
 
@@ -205,6 +205,41 @@ próxima sessão.
   33570eac56c8, head) e via consultas manuais em cada model (todas as
   três tabelas retornaram vazias, como esperado — nenhum dado de teste
   no banco ainda).
+- Modelo de dados do Memorando implementado (2026-08-12; ver
+  decision-log.md, entrada "[2026-08-12] Modelo de dados do Memorando
+  (substitui WeeklyRequisition)"). Models `Memorando`
+  (app/models/memorando.py) e `MemorandoLine`
+  (app/models/memorando_line.py) criados e registrados em
+  app/models/__init__.py:
+  - `Memorando`: campos de cabeçalho (tipo, vip_plan_id opcional —
+    obrigatório apenas quando tipo="pacote", regra validada em código,
+    não no banco), versionamento (version_number, previous_version_id
+    como FK autorreferenciada via remote_side=[id], status_versao),
+    responsavel_interno_id e generated_by_id/generated_at (FKs
+    separadas para User, com foreign_keys=[...] por haver duas FKs para
+    a mesma tabela), data_pedido, observacao, exported_at, e os campos
+    exclusivos de tipo="pacote" (forma_pagamento, valor_total,
+    pax_adultos, pax_criancas_6_12, pax_criancas_ate_5).
+  - `MemorandoLine`: memorando_id, vip_item_id (opcional — nulo para
+    linha avulsa/de sobra), item_type_id (sempre obrigatório),
+    quantidade, data_entrega (independente do planned_date do VipPlan
+    de origem), horario, pax (sempre manual, nunca puxado da
+    Reservation), descricao_observacao.
+  - ItemType (app/models/item_type.py) ganhou o campo
+    `preparation_sector` (String, nullable=True, sem default — itens já
+    cadastrados ficam com o campo vazio até revisão manual, item a
+    item; nenhuma migração preenche esse valor automaticamente).
+  - Migração "Cria tabelas de memorando e adiciona preparation_sector"
+    (c4572c5bb013) gerada e aplicada com sucesso em 2026-08-12.
+    Confirmado via `inspect(db.engine).get_table_names()`: 17 tabelas no
+    banco — alembic_version, audit_logs, categories,
+    category_item_templates, category_keywords, guest_badges,
+    guest_links, guests, institutional_dates, item_types,
+    memorando_lines, memorandos, reservations, stay_badges, users,
+    vip_items, vip_plans.
+  - Documentação em docs/technical/data-model.md atualizada com as
+    seções ItemType, Memorando e MemorandoLine antes da criação dos
+    models.
 
 
 \## O que NÃO existe ainda
@@ -218,6 +253,13 @@ próxima sessão.
 - CategoryKeyword ainda está vazia (model e tabela existem, seed de
   palavras-chave pendente — depende do resultado da sessão de UX em
   andamento sobre o fluxo de reconhecimento de reservas VIP).
+- Memorando: só o schema existe (models + migração aplicada). NÃO
+  existe nenhuma rota, nenhum formulário, nenhuma lógica de geração de
+  memorando, nenhum cálculo de agregação de linhas por setor + data de
+  entrega, e nenhuma lógica de versionamento (gerar v2 a partir de v1,
+  preencher previous_version_id, travar edição de conteúdo depois de
+  exported_at). As tabelas memorandos e memorando_lines estão vazias —
+  nenhum dado de teste foi criado.
 
 
 

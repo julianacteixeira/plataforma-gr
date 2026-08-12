@@ -10,6 +10,7 @@ class ItemType(db.Model):
     default_cost = db.Column(db.Numeric(10, 2), nullable=False)
     cost_category = db.Column(db.String(30), nullable=False)
     assembly_instructions = db.Column(db.Text, nullable=False)
+    preparation_sector = db.Column(db.String(30), nullable=True)
     created_at = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
