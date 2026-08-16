@@ -75,14 +75,15 @@ da importação Opera Cloud"). Implementação em 3 frentes:
      "guest" para "stay"
    - Correção de dado: `Pedido de Desculpas.manual_only = True`
 
-2. **Seed de `CategoryKeyword`** — PRÓXIMA ETAPA: lista completa
-   registrada no decision-log — ~90 entradas ao todo, incluindo
-   combinações "E" (`termo1+termo2`).
+2. **Seed de `CategoryKeyword` — CONCLUÍDA em 2026-08-16**
+   (app/seeds/category_keywords.py, comando `flask
+   seed-category-keywords`, ver current-state.md): 140 keywords
+   criadas, distribuídas em 18 categorias.
 
-3. **Módulo de importação** em `app/integrations/opera_cloud/`: parser
-   do XML RES_DETAIL e lógica de upsert de Guest/Reservation/
-   GuestBadge/StayBadge/ReservationNote, com entradas em AuditLog.
-   Depende da Frente 2 (seed de CategoryKeyword) estar concluída.
+3. **Módulo de importação** em `app/integrations/opera_cloud/` —
+   PRÓXIMA E ÚLTIMA ETAPA desta importação: parser do XML RES_DETAIL e
+   lógica de upsert de Guest/Reservation/GuestBadge/StayBadge/
+   ReservationNote, com entradas em AuditLog.
 
 Regra do projeto: nunca gerar e aplicar migração no mesmo passo —
 Prompt A (gera e mostra) sempre antes de Prompt B (aplica), com

@@ -247,6 +247,15 @@ próxima sessão.
   Fondue, ALL Kids) de "guest" para "stay"; Pedido de Desculpas.manual_only
   = True. Confirmado via flask db current (34c2442a159b, head) e via
   inspect(db.engine).get_table_names()) e consulta às categorias.
+- Seed de CategoryKeyword executado com sucesso via `flask
+  seed-category-keywords` (app/seeds/category_keywords.py, comando
+  registrado em app/__init__.py): 140 palavras-chave criadas,
+  distribuídas em 18 categorias (as demais 10 categorias não usam
+  keyword — origem all_tier, stay_count, rate_code, ou sem gatilho
+  automático por decisão). Comando é idempotente (idempotente = pode
+  ser rodado de novo sem duplicar dado, pois verifica antes de
+  inserir). Confirmado via consulta agrupada por categoria, batendo
+  exatamente com o total planejado.
 
 
 \## O que NÃO existe ainda
@@ -257,9 +266,9 @@ próxima sessão.
 - Exportação em XLSX.
 - Nenhum dado de teste no banco: as 6 tabelas existem, mas estão todas
   vazias.
-- CategoryKeyword: model e tabela existem, seed ainda pendente (Frente 2
-  da importação Opera Cloud — lista completa definida em
-  decision-log.md).
+- CategoryKeyword: model, tabela e seed de 140 keywords concluídos
+  (Frente 2 da importação Opera Cloud). Falta apenas o módulo de
+  importação em si (Frente 3) usar essa tabela na prática.
 - Memorando: só o schema existe (models + migração aplicada). NÃO
   existe nenhuma rota, nenhum formulário, nenhuma lógica de geração de
   memorando, nenhum cálculo de agregação de linhas por setor + data de
