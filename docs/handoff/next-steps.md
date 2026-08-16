@@ -60,37 +60,31 @@ executar" abaixo até a usuária decidir priorizá-la.
 
 
 
-\## Próxima etapa a executar
+## Importação Opera Cloud: planejamento CONCLUÍDO em 2026-08-12
 
-Importação manual de reservas (upload de arquivo) e consulta de
-reservas/hóspedes, conforme a ordem já prevista em "Etapas seguintes
-previstas" (item 3). Plano combinado em 2026-08-03, em 4 etapas:
+Mapeamento completo de campos e regras de badge fechado (ver
+decision-log.md, entrada "[2026-08-12] Mapeamento de campos e regras
+da importação Opera Cloud"). Pronta para implementação, em 3 frentes:
 
-1. Alinhar schema ao já decidido — CONCLUÍDA em 2026-08-03 (ver
-   current-state.md e decision-log.md, entrada de 2026-08-03). Precisou
-   de uma revisão adicional antes de poder avançar: a revisão de escopo
-   combinada com a usuária (GuestBadge separado em badge de hóspede vs.
-   badge de estadia, ItemType, GuestLink e campos novos em Reservation)
-   mudava o desenho já migrado. Essa revisão adicional também está
-   CONCLUÍDA em 2026-08-03 (migração 730b36ea5422, ver current-state.md
-   e decision-log.md).
-2. Módulo isolado de importação (Opera Cloud), em
-   app/integrations/opera_cloud/: parser do XML RES_DETAIL e lógica de
-   upsert de Guest/Reservation/GuestBadge, com entradas em AuditLog.
-   LIBERADA PARA COMEÇAR — schema já está no estado final esperado para
-   esta etapa.
-3. Rota de upload (blueprint novo, Flask-WTF, @login_required),
-   protegida, sem identidade visual ainda.
-4. Consulta de reservas/hóspedes (listagem e detalhe).
+1. **Migração de schema** (Prompt A, aguardando geração):
+   - `Reservation.dept_traces` (Text, nullable)
+   - Nova tabela `ReservationNote` (substitui `Reservation.notes`)
+   - `Category.opera_rate_code` (String, nullable, unique)
+   - Correção de dado (não é migração de coluna): `scope` das 3
+     categorias ALL Signature, de "guest" para "stay"
+   - Correção de dado: `Pedido de Desculpas.manual_only = True`
 
-Decisões técnicas já tomadas para as próximas etapas (ver decision-log.md,
-2026-08-03): o arquivo XML enviado é processado em memória e descartado
-(não é salvo em disco); o módulo fica em app/integrations/opera_cloud/.
+2. **Seed de `CategoryKeyword`**: lista completa registrada no
+   decision-log — ~90 entradas ao todo, incluindo combinações "E"
+   (`termo1+termo2`).
 
-Lembrar também que o log é alimentado manualmente pelo código (Opção A,
-decisão de 2026-07-23): cada função que cria ou altera VipPlan/VipItem
-também grava uma entrada no AuditLog. Não há captura automática nesta
-fase, então isso precisa ser escrito à mão em cada rota.
+3. **Módulo de importação** em `app/integrations/opera_cloud/`: parser
+   do XML RES_DETAIL e lógica de upsert de Guest/Reservation/
+   GuestBadge/StayBadge/ReservationNote, com entradas em AuditLog.
+
+Regra do projeto: nunca gerar e aplicar migração no mesmo passo —
+Prompt A (gera e mostra) sempre antes de Prompt B (aplica), com
+aprovação explícita da usuária entre os dois.
 
 
 

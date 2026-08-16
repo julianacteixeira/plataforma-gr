@@ -982,3 +982,194 @@ neste documento.
 
 &#x20; formato de dados).
 
+## [2026-08-12] Mapeamento de campos e regras da importação Opera Cloud (RES_DETAIL)
+
+**Contexto:** análise de dois arquivos reais de exemplo do relatório
+RES_DETAIL (XML) — um genérico e um filtrado por RATE_CODE de ALL
+Signature — feita para fechar o desenho técnico completo da importação
+antes de codificar o parser. Nenhum dado real de hóspede foi mantido
+neste documento.
+
+**Decisões de campo:**
+
+1. **Campo `VIP` (numérico, nativo do Opera) é ignorado.** Funciona hoje
+   como "chamariz" usado de forma aleatória, sem valor confiável. Não
+   gera nenhum campo no banco.
+
+2. **Comentários da reserva (`RES_COMMENT`): TODOS os tipos são
+   importados**, incluindo `GEN` (gerado automaticamente pelo sistema).
+   Nenhum é descartado na importação — decisão revertida em relação a um
+   rascunho anterior desta mesma sessão, por risco de perda silenciosa
+   de informação caso um tipo hoje considerado "ruído" se mostre
+   relevante no futuro, ou surja um tipo novo não previsto.
+
+3. **Nova tabela `ReservationNote` substitui o campo `Reservation.notes`
+   (Text).** Cada `RES_COMMENT` vira uma linha própria (não mais um
+   parágrafo dentro de um texto único), com campos: `id`,
+   `reservation_id` (FK), `comment_type` (string, valor de
+   `RES_COMMENT_TYPE`), `order_by` (inteiro, ordem original), `text`.
+   Isso permite filtro real por tipo nas telas futuras (ex: esconder
+   `GEN` por padrão, mostrar sob demanda) sem depender de leitura de
+   texto. Regra de exibição sugerida para a fase de telas: mostrar
+   `RES`/`CAS` por padrão, esconder `GEN` e tipos desconhecidos por
+   padrão, com opção de "mostrar tudo". O campo antigo `notes` é
+   removido do model (estava vazio, sem dado real em risco).
+
+4. **Fonte do número do quarto: `ROOM_NO`** (não `DISP_ROOM_NO`).
+
+5. **`PROFILE_NOTE` fica fora do MVP.** Confirmado, pela estrutura do
+   XML, que é ligado ao hóspede (perfil), não à reserva — estrutura
+   separada de `RES_COMMENT`/`ReservationNote`. Registrado como item de
+   backlog pós-MVP: importar via outro relatório do Opera e vincular
+   como campo editável e permanente no perfil do `Guest`.
+
+6. **Novo campo: `Reservation.dept_traces`** (Text, opcional). Cada
+   entrada de `G_DEPT_ID` (traces internos do Opera: `DEPT_ID`, data,
+   texto) vira um parágrafo formatado como `[DEPT_ID - data] texto`. Só
+   é preenchido se existir ao menos um trace; nunca gera placeholder
+   vazio. Todos os traces são importados agora, sem filtro por setor —
+   a possibilidade de esconder (nunca apagar) traces de determinados
+   `DEPT_ID` fica para a futura tela de Configurações (pós-MVP).
+
+**Decisões do sistema de badges via importação:**
+
+7. **Roteamento de badge (GuestBadge vs. StayBadge) por palavra-chave é
+   dinâmico, via `Category.scope`.** O código busca a palavra-chave em
+   `CategoryKeyword`, obtém a `Category` vinculada, e usa `scope` para
+   decidir automaticamente a tabela de badge. Nenhuma lista fixa no
+   código.
+
+8. **Categorias `manual_only` PODEM receber badge automática com status
+   `"suggested"`** (confirmado para Pax Querido — `manual_only` rege a
+   entrada automática de templates de item, não a criação de badge
+   sugerida, e `"suggested"` nunca vira `"active"` sozinho).
+
+9. **Busca de palavra-chave ignora acentos e caixa.**
+
+10. **Formato de combinação "E" (`termo1+termo2`):** uma linha de
+    `CategoryKeyword` pode registrar dois termos separados por `+`; a
+    regra só bate se AMBOS aparecerem em qualquer lugar do comentário
+    (ordem indiferente). Usado para reduzir listas extensas de
+    variações e para compor regras como "cargo + marca" ou "nome +
+    contexto".
+
+11. **Palavras genéricas ("vip", "mimo") apontam para a categoria
+    "Atenção Especial"** (scope = stay), reaproveitando-a como
+    sinalizador de revisão manual — mesmo princípio do campo `VIP`
+    nativo (item 1), sem criar mecanismo técnico novo.
+
+12. **Novo campo: `Category.opera_rate_code`** (string, opcional, único
+    quando preenchido). Cobre casos em que a categoria é identificada
+    por um código de produto/tarifa estruturado do Opera (`RATE_CODE`),
+    e não por busca em texto. Novo valor de origem de badge:
+    `"rate_code"` (`GuestBadge.source` / `StayBadge.source`, campo já é
+    texto livre, nenhuma migração adicional necessária além do novo
+    campo em Category). Badges dessa origem nascem com status
+    `"suggested"` por padrão — mesmo nos casos de alta confiança do
+    sinal, mantendo o padrão de sempre depender de aprovação humana.
+
+**Correções a decisões de schema anteriores:**
+
+13. **`Pedido de Desculpas` passa a `manual_only = True`** (estava
+    `False`). Motivo: são casos muito específicos de recuperação de
+    serviço, que podem surgir até com o hóspede já hospedado (ex:
+    acidente durante a estadia) — não é algo previsível varrendo
+    comentários no momento da importação. Sem palavra-chave associada.
+
+14. **As três categorias `ALL Signature` (Zen Day, Fondue, ALL Kids)
+    corrigidas de `scope = "guest"` para `scope = "stay"`.** O schema
+    atual as tinha como `guest` (persistente entre estadias); o correto
+    é `stay` — são experiências resgatadas pelo hóspede e vinculadas à
+    reserva específica em que foram resgatadas, não uma característica
+    permanente do hóspede. Esta é uma correção de dado (`UPDATE` de 3
+    linhas em `categories`), não uma migração de schema.
+
+15. **Regra de identificação das três categorias `ALL Signature`: por
+    `RATE_CODE`, não por palavra-chave em comentário.**
+    `ALSIG1` → ALL Signature Zen Day (Day Use + Massagens)
+    `ALSIG2` → ALL Signature Fondue (1 Diária + Fondue)
+    `ALSIG3` → ALL Signature ALL Kids (1 Diária no quarto ALL KIDS)
+    Confirmado via amostra real: campo 100% consistente (nenhuma
+    variação de escrita), pois é preenchido automaticamente pelo Opera
+    a partir do rate code configurado pelo RM, e as reservas em si são
+    inseridas manualmente por uma pessoa responsável específica pelo
+    controle dessas solicitações (via portal ALL Signature).
+
+15b. **Rate code `ACO` (tarifa heartist/colaborador) também gera
+    sugestão para `Colaboradores Accor`.** Diferente das três `ALL
+    Signature`, este código NÃO é exclusivo — outros perfis VIP
+    (diretores, gerentes Accor etc.) também podem reservar usando essa
+    tarifa quando fazem a reserva por conta própria. Limitação
+    conhecida e aceita: pode gerar sugestão incorreta ocasional,
+    sempre com status `"suggested"`, nunca `"active"` — a revisão
+    humana corrige o caso quando necessário. Reservas com
+    `RATE_CODE = "ACO"` tendem a não ter nenhuma observação/nota
+    associada, então esse é o único sinal disponível para elas.
+
+**Lista completa de palavras-chave a cadastrar em `CategoryKeyword`:**
+
+| Categoria | scope | Palavra(s)-chave |
+|---|---|---|
+| Colaboradores Accor | guest | `colaborador accor` (+ rate_code `ACO`, ver item 15b) |
+| Diretores Accor | guest | `diretoria accor` |
+| Gerentes Accor | guest | Combinação (cargo × marca) — ver item 16 |
+| Investidor | guest | `investidor`, `cotista`, `senpar`, `hotelinvest` |
+| Influencer | guest | `influencer`, `influenciador`, `influenciadora`, `creator`, `content creator` |
+| C-Suite | guest | `ceo`, `chief executive officer`, `presidente`, `president`, `chairman`, `chairwoman`, `chairperson`, `diretor`, `director`, `vp`, `evp`, `svp`, `country manager`, `board member`, `conselheiro`, `conselheira`, `managing partner` |
+| Pax Querido | guest (manual_only) | `pax+querido`, `pax+querida`, `pax+amor` |
+| ALL Gold/Platinum/Diamond | guest | *(nenhuma — origem `all_tier`, automática via `MEMBERSHIP_TYPE`)* |
+| Habitué/Habituée | guest | *(nenhuma — origem `stay_count`, automática)* |
+| ALL Signature (x3) | stay *(corrigido, item 14)* | *(nenhuma keyword — usa `opera_rate_code`, item 15)* |
+| Aniversário | stay | `aniversário`, `niver` |
+| Casamento | stay | `casamento` |
+| Lua de Mel/Romântico | stay | `lua de mel`, `romântico` |
+| Voucher Novos Colaboradores | stay | `voucher novos colaboradores` |
+| Atenção Especial | stay | `vip`, `mimo` |
+| Comemorações | stay | `comemoração`, `celebração`, `formatura`, `aposentadoria` |
+| Vip Eventos | stay | `vip eventos`, `evento vip`, `cliente de eventos`, `cliente importante`, `cliente trouxe o evento`, `responsável pelo evento` |
+| Data de Fechamento | stay | `fechamento` |
+| Pedido de Desculpas | stay *(corrigido para manual_only, item 13)* | *(nenhuma)* |
+| Convidados Gerência | stay | Nomes completos + combinações — ver item 17 |
+| Organizador de Grupo | stay | `organizador do grupo`, `líder do grupo`, `responsável pelo grupo` |
+| Ações | stay | *(nenhuma — ver item 18, pendência de processo)* |
+| Pacote Contratado | stay | `pacote contratado`, `kit festa`, `festa exclusiva`, `festa na varanda`, `presente gentileza`, `presente lembrança`, `presente presença`, `pacote romântico`, `bolo+kg`, `pacote+encanto`, `pacote+memorável`, `pacote+deslumbrante` |
+| IBIOBI | stay (manual_only) | *(nenhuma — nunca aparece no RES_DETAIL)* |
+
+16. **Gerentes Accor — 54 combinações (3 termos de cargo × 18 marcas):**
+    Cargos: `gerente`, `gg`, `gm`.
+    Marcas: `accor`, `fairmont`, `sofitel`, `mgallery`, `25hours`,
+    `mama shelter`, `swissôtel`, `pullman`, `mercure`, `mantis`,
+    `novotel`, `tribe`, `mantra`, `adagio`, `ibis`, `jo&joe`,
+    `hotelf1`, `jequitimar` (lista pode crescer via cadastro direto no
+    banco, sem nova sessão de código).
+
+17. **Convidados Gerência:** nomes completos sem exigir contexto —
+    `daniel betiol`, `natália tamassia`, `milena aguiar` — mais 18
+    combinações (3 nomes curtos × 6 palavras de contexto): nomes
+    `daniel`, `natália`, `milena`; contexto `pedido`, `vip`,
+    `convidado`, `convidada`, `amigo`, `amiga`. A forma curta "Nat" foi
+    descartada por ser arriscada demais (3 letras).
+
+18. **Ações fica sem palavra-chave.** Diferente das demais, aqui não
+    existe termo confiável possível: são ações criadas pelo time de
+    MICE, frequentemente sem aviso prévio à GR, com nomes muito
+    variados. Registrado como pendência de processo no backlog (ver
+    entrada "Padronização de sinalização em reservas").
+
+**Alternativas consideradas:**
+- Manter uma lista fixa de palavras-chave por tipo de badge, direto no
+  código do parser — rejeitado; `CategoryKeyword` + `scope` da
+  categoria evita duplicar essa regra em dois lugares.
+- Criar um mecanismo técnico novo (campo de flag, tabela à parte) para
+  palavras genéricas como "vip"/"mimo" — rejeitado; a categoria
+  "Atenção Especial" já cobre esse propósito semanticamente.
+- Guardar os traces (`G_DEPT_ID`) em tabela própria, granular por setor
+  — rejeitado para o MVP; opção futura se surgir necessidade real de
+  filtro por setor.
+- Usar `CategoryKeyword` (busca em texto) também para as categorias ALL
+  Signature — rejeitado após confirmar que `RATE_CODE` é um campo
+  estruturado e confiável; criar `Category.opera_rate_code` é mais
+  simples e sem risco de falso negativo por variação de escrita.
+
+**Status:** Aprovado.
+

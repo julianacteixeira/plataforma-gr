@@ -92,6 +92,35 @@ Legenda: \[ ] pendente · \[x] concluído · (P) requer decisão pendente
 
 \- \[ ] Refinamento visual completo (microinterações em todas as telas)
 
+- [ ] Padronização de sinalização em reservas (comentários/notes do Opera)
+
+  **Contexto (registrado em 2026-08-12, sessão de planejamento da
+  importação Opera Cloud):** durante o desenho das palavras-chave de
+  badges automáticas, identificaram-se duas lacunas de comunicação que
+  limitam o reconhecimento automático:
+
+  1. A equipe usa formas muito variadas e informais para sinalizar
+     pedidos de gerência em comentários de reserva (ex: nomes curtos
+     como "Daniel" ou "Nat" em vez de nome completo, sem padrão fixo
+     de frase).
+  2. Ações criadas pelo time de MICE (Meetings, Incentives,
+     Conferences, Exhibitions) frequentemente não chegam ao
+     conhecimento da GR com antecedência, e quando aparecem em
+     comentário de reserva, vêm com nomes muito variados — sem padrão
+     algum, tornando inviável qualquer lista de palavras-chave.
+
+  **Proposta:** um projeto à parte, fora do escopo desta plataforma,
+  para acordar com as equipes envolvidas um padrão simples de
+  sinalização em comentários do Opera. Ideia inicial levantada pela
+  usuária para o caso do MICE: adotar um prefixo fixo como
+  **"Ação MICE"** seguido de uma descrição breve, sempre que uma ação
+  for criada e afete hóspedes vipados. Isso tornaria o reconhecimento
+  automático de badges mais confiável no futuro, sem depender de
+  listas extensas e sempre incompletas de variações.
+
+  **Status:** ideia registrada, não iniciada. A usuária pretende
+  apresentar este documento à equipe.
+
 
 
 \## Integrações Futuras
