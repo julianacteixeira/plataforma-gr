@@ -64,23 +64,25 @@ executar" abaixo até a usuária decidir priorizá-la.
 
 Mapeamento completo de campos e regras de badge fechado (ver
 decision-log.md, entrada "[2026-08-12] Mapeamento de campos e regras
-da importação Opera Cloud"). Pronta para implementação, em 3 frentes:
+da importação Opera Cloud"). Implementação em 3 frentes:
 
-1. **Migração de schema** (Prompt A, aguardando geração):
+1. **Migração de schema — CONCLUÍDA em 2026-08-16** (migração
+   34c2442a159b, ver current-state.md):
    - `Reservation.dept_traces` (Text, nullable)
    - Nova tabela `ReservationNote` (substitui `Reservation.notes`)
    - `Category.opera_rate_code` (String, nullable, unique)
-   - Correção de dado (não é migração de coluna): `scope` das 3
-     categorias ALL Signature, de "guest" para "stay"
+   - Correção de dado: `scope` das 3 categorias ALL Signature, de
+     "guest" para "stay"
    - Correção de dado: `Pedido de Desculpas.manual_only = True`
 
-2. **Seed de `CategoryKeyword`**: lista completa registrada no
-   decision-log — ~90 entradas ao todo, incluindo combinações "E"
-   (`termo1+termo2`).
+2. **Seed de `CategoryKeyword`** — PRÓXIMA ETAPA: lista completa
+   registrada no decision-log — ~90 entradas ao todo, incluindo
+   combinações "E" (`termo1+termo2`).
 
 3. **Módulo de importação** em `app/integrations/opera_cloud/`: parser
    do XML RES_DETAIL e lógica de upsert de Guest/Reservation/
    GuestBadge/StayBadge/ReservationNote, com entradas em AuditLog.
+   Depende da Frente 2 (seed de CategoryKeyword) estar concluída.
 
 Regra do projeto: nunca gerar e aplicar migração no mesmo passo —
 Prompt A (gera e mostra) sempre antes de Prompt B (aplica), com

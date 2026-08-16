@@ -240,6 +240,13 @@ próxima sessão.
   - Documentação em docs/technical/data-model.md atualizada com as
     seções ItemType, Memorando e MemorandoLine antes da criação dos
     models.
+- Migração 34c2442a159b aplicada com sucesso: nova tabela
+  reservation_notes; Reservation ganhou dept_traces e perdeu notes;
+  Category ganhou opera_rate_code (unique). Correção de dado aplicada
+  na mesma migração: scope das 3 categorias ALL Signature (Zen Day,
+  Fondue, ALL Kids) de "guest" para "stay"; Pedido de Desculpas.manual_only
+  = True. Confirmado via flask db current (34c2442a159b, head) e via
+  inspect(db.engine).get_table_names()) e consulta às categorias.
 
 
 \## O que NÃO existe ainda
@@ -250,9 +257,9 @@ próxima sessão.
 - Exportação em XLSX.
 - Nenhum dado de teste no banco: as 6 tabelas existem, mas estão todas
   vazias.
-- CategoryKeyword ainda está vazia (model e tabela existem, seed de
-  palavras-chave pendente — depende do resultado da sessão de UX em
-  andamento sobre o fluxo de reconhecimento de reservas VIP).
+- CategoryKeyword: model e tabela existem, seed ainda pendente (Frente 2
+  da importação Opera Cloud — lista completa definida em
+  decision-log.md).
 - Memorando: só o schema existe (models + migração aplicada). NÃO
   existe nenhuma rota, nenhum formulário, nenhuma lógica de geração de
   memorando, nenhum cálculo de agregação de linhas por setor + data de
