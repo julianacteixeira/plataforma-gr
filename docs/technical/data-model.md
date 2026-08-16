@@ -112,6 +112,29 @@ cada um com sua própria origem e status.
 
 
 
+## CategoryKeyword (palavra-chave de categoria)
+Usada pela importação Opera Cloud para sugerir badges automaticamente
+(GuestBadge ou StayBadge, roteado dinamicamente via Category.scope — ver
+decisão de 2026-08-12 em decision-log.md). Busca por substring, case- e
+acento-insensível. Suporta combinação "E" no formato `termo1+termo2`
+(ambos precisam aparecer no comentário, em qualquer ordem, para a regra
+bater).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| category_id | integer | FK -> Category |
+| keyword | string(100) | termo único ou combinação `termo1+termo2` |
+| active | boolean | default True — permite desativar uma keyword sem apagar |
+| created_by_id | integer | FK -> User, opcional — nulo quando a keyword vem de seed/carga automática |
+| created_at | timestamp | |
+
+Sem unicidade de `(category_id, keyword)` no banco — checagem de
+duplicidade fica a cargo do código que popula a tabela (seed ou tela de
+cadastro futura).
+
+
+
 \## Reservation (reserva)
 
 | Campo | Tipo | Observação |
