@@ -1173,3 +1173,33 @@ neste documento.
 
 **Status:** Aprovado.
 
+
+## [2026-08-16] Extensão do nível ALL: inclusão de A6 (Limitless)
+
+**Contexto:** ao planejar o parser da importação Opera Cloud, análise de
+arquivo real trouxe um MEMBERSHIP_TYPE fora da faixa prevista pela
+decisão de 2026-08-02 (que considerava A1 a A5 para all_member, e A3 a
+A5 para badge automático). Revisão com a usuária confirmou a existência
+de um nível ALL acima de Diamond (A5): Limitless (A6) — nível oculto,
+sem divulgação pública, só por convite direto da Accor, com cerca de
+300 membros no mundo.
+
+**Decisão:**
+- Mantém-se a distinção original de 2026-08-02 entre as duas regras
+  (all_member vs. badge automático) — esta entrada apenas estende
+  ambas as faixas em um nível, para cobrir A6.
+- `Guest.all_member`/`all_card_number` passam a considerar MEMBERSHIP_TYPE
+  em A1, A2, A3, A4, A5 ou A6 (antes: A1 a A5). Tipo "ID" e qualquer
+  outro fora dessa faixa (ex: "G7", encontrado numa amostra real)
+  continuam totalmente ignorados para fins de all_member.
+- Badge automático de origem "all_tier" passa a cobrir A3 (Gold), A4
+  (Platinum), A5 (Diamond) e A6 (Limitless) — antes: A3 a A5. A1 e A2
+  continuam sem gerar badge (mesmo comportamento original), mesmo
+  marcando all_member=True.
+- Nova Category: "ALL Limitless" (scope="guest", mesmo padrão das
+  demais categorias ALL Gold/Platinum/Diamond — sem keyword, sem
+  suggestion_priority no ranking normal, origem exclusivamente
+  automática via MEMBERSHIP_TYPE).
+
+**Status:** Aprovado.
+
