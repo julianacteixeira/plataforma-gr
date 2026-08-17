@@ -12,6 +12,7 @@ class Category(db.Model):
     manual_only = db.Column(db.Boolean, default=False, nullable=False)
     suggestion_priority = db.Column(db.Integer, nullable=True)
     active = db.Column(db.Boolean, default=True, nullable=False)
+    opera_rate_code = db.Column(db.String(20), nullable=True, unique=True)
 
     def __repr__(self):
         return f"<Category {self.name} ({self.scope})>"

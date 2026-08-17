@@ -5,6 +5,7 @@ from app.models.guest import Guest
 from app.models.guest_badge import GuestBadge
 from app.models.guest_link import GuestLink
 from app.models.reservation import Reservation
+from app.models.reservation_note import ReservationNote
 from app.models.stay_badge import StayBadge
 from app.models.item_type import ItemType
 from app.models.category_item_template import CategoryItemTemplate

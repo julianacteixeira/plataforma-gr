@@ -12,12 +12,14 @@ class Reservation(db.Model):
     room_number = db.Column(db.String(20), nullable=True)
     reservation_code = db.Column(db.String(50), unique=True, nullable=False)
     source = db.Column(db.String(20), nullable=False, default="manual")
-    notes = db.Column(db.Text, nullable=True)
+    dept_traces = db.Column(db.Text, nullable=True)
     confirmed_eta = db.Column(db.String(5), nullable=True)
     contact_status = db.Column(db.String(20), nullable=False, default="pendente")
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
+
+    reservation_notes = db.relationship("ReservationNote", backref="reservation")
 
     def __repr__(self):
         return f"<Reservation {self.reservation_code}>"

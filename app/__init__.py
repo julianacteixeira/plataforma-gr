@@ -38,4 +38,12 @@ def create_app():
         print(f"Categorias criadas: {criadas}")
         print(f"Categorias atualizadas: {atualizadas}")
 
+    @app.cli.command("seed-category-keywords")
+    def seed_category_keywords_command():
+        """Popula category_keywords com as palavras-chave de sugestão de badge."""
+        from app.seeds.category_keywords import run
+        criadas, puladas = run()
+        print(f"Keywords criadas: {criadas}")
+        print(f"Keywords puladas (já existiam): {puladas}")
+
     return app
