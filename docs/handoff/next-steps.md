@@ -1,5 +1,27 @@
 \# Próximos Passos — Plataforma de Guest Relations
 
+## PARADA EM 2026-08-24 — bloqueado aguardando arquivo XML real
+
+Frente 3 (parser Opera Cloud) iniciada. ImportLog e ImportErrorRecord
+já implementados e migrados (commit 07f958d). Fatiamento combinado:
+1) parser puro do XML, 2) upsert de Guest, 3) upsert de
+Reservation/ReservationNote/dept_traces, 4) StayBadge via keyword,
+5) orquestração + ImportLog/ImportErrorRecord.
+
+BLOQUEIO: para escrever a Fatia 1 (parser), faltam confirmar os nomes
+exatos de 4 tags do XML RES_DETAIL que NENHUMA decisão registrada
+cobre: check_in, check_out, room_number e o nome do hóspede. As tags
+já confirmadas em decisões anteriores (CONFIRMATION_NO, GUEST_NAME_ID,
+MEMBERSHIP_TYPE, RES_COMMENT, SHORT_RESV_STATUS, DEPT_ID) não incluem
+essas 4. Não adivinhar — próxima sessão deve abrir um arquivo XML real
+(sem dados de hóspede reais expostos fora do ambiente) para extrair só
+a estrutura de tags antes de continuar.
+
+Próximo passo concreto: obter acesso a um arquivo RES_DETAIL real
+(provavelmente só disponível no computador do trabalho) e extrair a
+estrutura de tags relevante para check_in/check_out/room_number/nome
+do hóspede.
+
 
 
 \## Category: revisão concluída
