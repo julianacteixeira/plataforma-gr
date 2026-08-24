@@ -48,6 +48,8 @@ CATEGORIES = [
      "always_apply": False, "manual_only": False, "suggestion_priority": 10},
     {"name": "ALL Diamond", "scope": "guest", "group_number": 3,
      "always_apply": False, "manual_only": False, "suggestion_priority": 11},
+    {"name": "ALL Limitless", "scope": "guest", "group_number": 3,
+     "always_apply": False, "manual_only": False, "suggestion_priority": 11},
     {"name": "Lua de Mel/Romântico", "scope": "stay", "group_number": 4,
      "always_apply": False, "manual_only": False, "suggestion_priority": 12},
     {"name": "ALL Platinum", "scope": "guest", "group_number": 2,

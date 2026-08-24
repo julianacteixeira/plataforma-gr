@@ -1203,3 +1203,26 @@ sem divulgação pública, só por convite direto da Accor, com cerca de
 
 **Status:** Aprovado.
 
+
+## [2026-08-24] Esclarecimento: ALL Limitless entra empatada com ALL Diamond
+
+**Contexto:** a entrada de 2026-08-16 ("Extensão do nível ALL: inclusão
+de A6 (Limitless)") continha uma contradição de redação — dizia que a
+nova categoria seguiria "o mesmo padrão das demais categorias ALL
+Gold/Platinum/Diamond" mas também "sem suggestion_priority no ranking
+normal", quando na prática as três categorias citadas TÊM
+suggestion_priority definida.
+
+**Decisão:** "ALL Limitless" entra com os mesmos valores de "ALL
+Diamond" em todos os campos (scope="guest", group_number=3,
+suggestion_priority=11, always_apply=False, manual_only=False),
+incluindo o empate proposital de suggestion_priority=11 com Diamond.
+Justificativa: é um nível raríssimo (~300 membros no mundo), sem
+frequência esperada relevante no dia a dia do GR, não compensando criar
+uma faixa de prioridade dedicada só para ele. Em caso de uma estadia se
+qualificar simultaneamente para Diamond e Limitless (cenário
+extremamente improvável), o desempate fica a critério de qual registro
+o sistema retornar primeiro na consulta — não há regra adicional
+definida, por decisão explícita de manter simples.
+
+**Status:** Aprovado.
