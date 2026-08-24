@@ -15,3 +15,5 @@ from app.models.audit_log import AuditLog
 from app.models.institutional_date import InstitutionalDate
 from app.models.memorando import Memorando
 from app.models.memorando_line import MemorandoLine
+from app.models.import_log import ImportLog
+from app.models.import_error import ImportErrorRecord

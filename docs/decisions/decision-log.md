@@ -1226,3 +1226,49 @@ o sistema retornar primeiro na consulta — não há regra adicional
 definida, por decisão explícita de manter simples.
 
 **Status:** Aprovado.
+
+
+## [2026-08-24] Modelo de dados de ImportLog e ImportError
+
+**Contexto:** necessário antes do parser da Frente 3 (importação Opera
+Cloud). Diferente do AuditLog (que registra decisões humanas de
+vipagem e é imutável por design), ImportLog/ImportError cobrem uma
+necessidade distinta: apoio operacional para não perder informação
+sobre o que aconteceu numa importação, caso a tela trave, a sessão
+reinicie, ou o resultado não seja lido/compreendido a tempo.
+
+**Decisão:**
+- Duas tabelas novas: ImportLog (uma linha por arquivo importado) e
+  ImportError (uma linha por reserva que falhou dentro de um import).
+- ImportLog NÃO entra no escopo do AuditLog — seria redundante, já que
+  ImportLog é o próprio registro daquela operação.
+- ImportLog e ImportError NÃO são imutáveis (sem listeners de
+  before_update/before_delete como o AuditLog tem). Diferente de
+  decisões humanas de vipagem, este é um registro técnico gerado pelo
+  próprio sistema; pode ser necessário limpar entradas antigas já
+  resolvidas no futuro (rotina de limpeza fica como pendência não-
+  bloqueante, não implementada agora).
+- Índice em ImportError.import_log_id, para consulta rápida de "todos
+  os erros de um import específico" — custo desprezível.
+
+**Campos de ImportLog:**
+- id (PK)
+- imported_by_id (FK -> User, obrigatório)
+- imported_at (timestamp, obrigatório)
+- filename (string, obrigatório) — nome do arquivo enviado; o conteúdo
+  do XML não é salvo em disco (decisão de 2026-08-03)
+- total_reservations (integer, obrigatório)
+- total_created (integer, obrigatório)
+- total_updated (integer, obrigatório)
+- total_cancelled (integer, obrigatório)
+- total_errors (integer, obrigatório)
+
+**Campos de ImportError:**
+- id (PK)
+- import_log_id (FK -> ImportLog, obrigatório, indexado)
+- confirmation_no (string, obrigatório) — vem do XML; não é FK, pois a
+  Reservation pode não ter chegado a ser criada
+- error_message (text, obrigatório)
+- created_at (timestamp, obrigatório)
+
+**Status:** Aprovado.

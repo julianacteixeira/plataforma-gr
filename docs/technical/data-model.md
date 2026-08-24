@@ -369,6 +369,41 @@ automática via eventos do SQLAlchemy no pós-MVP (Opção B).
 
 
 
+## ImportLog (registro de importação)
+
+Apoio operacional para a importação Opera Cloud (Frente 3) — uma linha
+por arquivo importado. Diferente do AuditLog (que registra decisões
+humanas de vipagem e é imutável por design), ImportLog não é imutável:
+é um registro técnico gerado pelo próprio sistema (decisão de
+2026-08-24 em decision-log.md).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| imported_by_id | integer | FK -> User |
+| imported_at | timestamp | |
+| filename | string | nome do arquivo enviado — o conteúdo do XML não é salvo em disco (decisão de 2026-08-03) |
+| total_reservations | integer | |
+| total_created | integer | |
+| total_updated | integer | |
+| total_cancelled | integer | |
+| total_errors | integer | |
+
+## ImportError (erro de importação)
+
+Uma linha por reserva que falhou dentro de um import (decisão de
+2026-08-24 em decision-log.md).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| import_log_id | integer | FK -> ImportLog, indexado |
+| confirmation_no | string | vem do XML; não é FK, pois a Reservation pode não ter chegado a ser criada |
+| error_message | text | |
+| created_at | timestamp | |
+
+
+
 \---
 
 
