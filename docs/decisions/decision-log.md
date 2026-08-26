@@ -1272,3 +1272,101 @@ reinicie, ou o resultado não seja lido/compreendido a tempo.
 - created_at (timestamp, obrigatório)
 
 **Status:** Aprovado.
+
+## [2026-08-26] Estrutura confirmada do XML RES_DETAIL e correção de order_by
+
+**Contexto:** o bloqueio registrado em next-steps.md ("PARADA EM 2026-08-24")
+foi resolvido com acesso a um arquivo RES_DETAIL real (698 reservas, janela de
+6 dias de chegada). A análise extraiu apenas estrutura de tags, formatos e
+valores de campos controlados — nenhum dado de hóspede foi registrado neste
+documento nem mantido no repositório.
+
+**Estrutura hierárquica confirmada:**
+
+```
+RES_DETAIL
+└── LIST_G_GROUP_BY1
+    └── G_GROUP_BY1 (N ocorrências — uma por data de chegada)
+        └── LIST_G_RESERVATION
+            └── G_RESERVATION (uma por reserva, ~110 campos)
+                ├── LIST_G_COMMENT_RESV_NAME_ID → G_COMMENT_RESV_NAME_ID
+                ├── LIST_G_DEPT_ID              → G_DEPT_ID
+                ├── LIST_G_MEM_TYPE_LEVEL       → G_MEM_TYPE_LEVEL
+                └── LIST_G_COMMENT_NAME_ID      → G_COMMENT_NAME_ID (PROFILE_NOTE, fora do MVP)
+```
+
+**ATENÇÃO — armadilha do agrupamento:** o relatório vem agrupado por data de
+chegada, gerando múltiplos G_GROUP_BY1 (6 na amostra, com distribuição muito
+desigual: 503 reservas num deles e 19 em outro). O parser DEVE percorrer todos
+os G_GROUP_BY1; ler apenas o primeiro importaria uma fração das reservas sem
+gerar erro algum. O número de grupos varia conforme o filtro de datas do
+relatório e nunca deve ser assumido.
+
+Convenção de nomes do relatório: LIST_G_X é sempre o contêiner da lista, G_X é
+cada item. Contêineres aparecem mesmo quando vazios — lista vazia significa
+zero itens, nunca erro.
+
+**Tags confirmadas (as 4 que faltavam e bloqueavam a Frente 3):**
+- check_in → ARRIVAL (formato DD/MM/AA)
+- check_out → DEPARTURE (formato DD/MM/AA)
+- room_number → ROOM_NO (vazio em 134 de 698 — quarto ainda não atribuído)
+- nome do hóspede → FULL_NAME (formato SOBRENOME,NOME)
+
+**Confirmações de decisões anteriores:**
+- ROOM_NO == DISP_ROOM_NO em 100% da amostra (confirma decisão de 2026-08-12,
+  item 4).
+- MEMBERSHIP_LEVEL vem sempre vazio; MEMBERSHIP_TYPE é a única fonte de nível
+  ALL. Uma reserva pode ter até 3 entradas de fidelidade, o que confirma a
+  necessidade da regra de "pegar o nível mais alto".
+- RATE_CODE traz ALSIG1 (1 reserva), ALSIG3 (2 reservas) e ACO (5 reservas) na
+  amostra, confirmando o formato e a consistência dos códigos definidos em
+  2026-08-12, itens 15 e 15b. ALSIG2 (ALL Signature Fondue) não aparece nesta
+  amostra específica — ausência esperada, dado que houve apenas 3 resgates ALL
+  Signature em 698 reservas; não invalida o código, que segue registrado e
+  cadastrado em Category.opera_rate_code.
+- PROFILE_NOTE aparece em lista separada, ligada ao perfil e não à reserva
+  (confirma decisão de 2026-08-12, item 5 — fora do MVP).
+
+**CORREÇÃO — RES_COMMENT_ORDER_BY não é a ordem original.** A decisão de
+2026-08-12, item 3, definia ReservationNote.order_by como "inteiro, ordem
+original", pressupondo que o XML entregava essa ordem. O arquivo real mostra
+que o campo é constante por tipo de comentário: GEN=1, RES=2, CAS=4. É uma
+ordem de exibição por categoria, não a sequência dentro da reserva. Em 289 de
+698 reservas há mais de um comentário do mesmo tipo, o que torna o campo
+inutilizável como ordenação.
+
+Também foi descartada a alternativa de usar COMMENT_RESV_NAME_ID como
+desempate: apesar do nome, ele repete o RESV_NAME_ID da reserva, idêntico em
+todos os comentários dela (670 valores distintos para 1477 comentários). O
+relatório não oferece nenhum identificador estável por comentário.
+
+**Decisão:** ReservationNote.order_by passa a receber a ORDEM DE LEITURA do
+comentário dentro da reserva (1, 2, 3...), atribuída pelo parser conforme a
+sequência em que aparecem no XML. O valor original do Opera é descartado — ele
+é derivável do comment_type, já gravado. Nenhuma mudança de schema: o campo já
+existe como inteiro.
+
+**Consequência:** a ausência de identificador estável por comentário confirma
+que a estratégia de apagar e recriar todas as ReservationNote da reserva a cada
+importação (decisão já tomada) não é apenas conveniente — é a única possível.
+
+**Formato de data — dupla verificação.** ARRIVAL/DEPARTURE usam DD/MM/AA, com
+ano de dois dígitos e ordem dia/mês dependente da configuração de locale do
+relatório no Opera. Uma mudança dessa configuração faria o parser ler datas
+erradas silenciosamente (05/08 viraria 8 de maio sem gerar erro). O relatório
+também traz TRUNC_BEGIN/TRUNC_END no formato DD-MON-AA (ex: 28-AUG-26), com
+mês em abreviação textual, impossível de confundir.
+
+**Decisão:** o parser lê TRUNC_BEGIN/TRUNC_END como fonte primária e confere o
+resultado contra ARRIVAL/DEPARTURE. Em caso de divergência, a reserva não é
+importada — vai para ImportErrorRecord com a mensagem correspondente.
+Transformar uma falha silenciosa em erro visível tem prioridade sobre importar
+o máximo de reservas possível.
+
+**Alternativas consideradas:**
+- Gravar o valor original de RES_COMMENT_ORDER_BY — rejeitado por gravar um
+  campo com aparência de ordenação que não ordena.
+- Ler apenas ARRIVAL/DEPARTURE, sem conferência — rejeitado pelo risco de erro
+  silencioso em mudança de locale do relatório.
+
+**Status:** Aprovado.
