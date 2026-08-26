@@ -1370,3 +1370,114 @@ o máximo de reservas possível.
   silencioso em mudança de locale do relatório.
 
 **Status:** Aprovado.
+
+## [2026-08-26] Share de quarto, status da reserva e campos novos em Reservation
+
+**Contexto:** decorrente da análise do arquivo RES_DETAIL real (ver entrada
+anterior desta mesma data). Fecha três pontos que nenhuma decisão anterior
+cobria e que bloqueavam a escrita do parser da Frente 3.
+
+### 1. Share de quarto — modelo correto
+
+Share NÃO é "titular + acompanhante numa mesma reserva". São reservas
+distintas e de mesmo peso que dividem o mesmo quarto: cada uma tem seu próprio
+CONFIRMATION_NO e seu próprio GUEST_NAME_ID (435 perfis distintos entre 437
+reservas compartilhadas na amostra). O Opera não marca nenhuma como principal.
+
+- FULL_NAME vem com prefixo "*" quando a reserva é compartilhada; o parser
+  remove o "*". Correspondência com IS_SHARED_YN = "Y" confirmada em 437 de
+  437 casos.
+- SHARE_NAMES (nome da outra pessoa) NÃO é importado: é dado pessoal de
+  terceiro, já presente no cadastro da reserva dele, e replicá-lo contraria o
+  princípio de minimização de dado (LGPD).
+- ACCOMPANYING_NAMES NÃO é importado: vem vazio nas 698 reservas da amostra e
+  ACCOMPANYING_YN é "N" em todas — o campo não é usado na operação do hotel.
+- Novo campo Reservation.is_shared (Boolean), vindo de IS_SHARED_YN.
+
+**Agrupamento derivado, não persistido.** O vínculo entre reservas que dividem
+quarto é calculado na consulta, não gravado em tabela de vínculo: mesmo
+ROOM_NO + estadias que se sobrepõem. NÃO exigir datas iguais — a amostra tem
+14 pares no mesmo quarto com chegadas em dias diferentes (ex: titular de 01 a
+05, segunda reserva de 02 a 03). Reservas sem ROOM_NO atribuído (43 das 437
+compartilhadas) ficam sem vínculo até o quarto ser definido numa importação
+posterior; nada quebra, a informação apenas chega depois.
+
+Descartada a alternativa de tabela de vínculo persistente: exigiria migração,
+lógica de desfazer vínculo em troca de quarto, e tratamento para o par ausente
+do arquivo — peso desproporcional para uma tela que ainda não existe.
+
+**Âncora do grupo (para exibição):** a reserva com maior soma de
+adults + children; em caso de empate, a de menor reservation_code. Critério
+fixo e previsível — nunca "o que o banco devolver primeiro". Base empírica:
+por padrão da equipe, a ocupação é declarada na reserva do titular e as demais
+vêm zeradas; na amostra, 186 de 193 grupos tinham exatamente uma reserva com
+adults > 0, e 225 das 437 reservas compartilhadas tinham adults = 0 e
+children = 0. Nos 7 grupos restantes, o desempate por reservation_code
+resolve. Grupos de 3 e 4 reservas existem (16 e 3 na amostra) — o desenho deve
+tratar lista de irmãs, nunca um par fixo.
+
+**REGRA REGISTRADA — presença de criança é pergunta de GRUPO.** Como a
+ocupação se concentra na reserva âncora, a variação de template por presença
+de criança (CategoryItemTemplate.requires_child, decisão de 2026-08-03) deve
+ser avaliada somando adults/children de todas as reservas do grupo de quarto,
+nunca da reserva isolada. Avaliar reserva a reserva produziria sugestão errada
+sempre que o mimo for planejado na reserva sem a criança declarada.
+
+**RISCO REGISTRADO (não resolvido nesta entrada):** um quarto compartilhado
+gera duas ou mais reservas no sistema, portanto dois ou mais planejamentos de
+vipagem possíveis para o mesmo quarto na mesma data — risco real de entrega
+duplicada. Isso NÃO se resolve no parser, que precisa gravar todas as reservas
+sob pena de perder informação; resolve-se na interface, agrupando visualmente
+as reservas irmãs. Fica como pendência da fase de telas.
+
+### 2. Status da reserva
+
+A amostra trouxe 9 valores de SHORT_RESV_STATUS, e não apenas CXL: GRD, GCC,
+CXL, NON (não garantido), PPO, GCO, DEP, HT, CKIN.
+
+- Novo campo Reservation.opera_status (String(10), nullable): recebe o código
+  CRU, sem tradução na importação. Nulo em reservas não vindas do Opera.
+- Interpretação pelo sistema: "CXL" = cancelada; "CKIN" = hóspede já em
+  check-in (in house); qualquer outro valor = reserva ativa. Garantia,
+  pagamento e demais variações comerciais não alteram a rotina de Guest
+  Relations.
+- Código desconhecido NUNCA interrompe a importação: cai em "ativa" e o valor
+  cru fica visível para revisão humana. Isso protege contra códigos novos que
+  o Opera venha a emitir no futuro.
+- CKIN foi incluído a pedido da usuária, para permitir mimo a hóspede já
+  hospedado.
+
+**Observação importante:** o CKIN do XML não é a fonte de quem está in house.
+O relatório é filtrado por data de chegada, então hóspedes que chegaram antes
+da janela do relatório não aparecem (apenas 1 CKIN em 698 reservas na
+amostra). A tela "Guests in House" deve consultar o banco
+(check_in <= hoje < check_out), que acumula importações anteriores.
+
+### 3. Campos novos em Reservation — migração c161f11a4dd5
+
+| Campo | Tipo | Origem no XML |
+|---|---|---|
+| opera_status | String(10), nullable=True | SHORT_RESV_STATUS |
+| is_shared | Boolean, nullable=False, server_default=sa.false() | IS_SHARED_YN |
+| adults | Integer, nullable=True | ADULTS |
+| children | Integer, nullable=True | CHILDREN |
+
+adults/children são nullable porque podem não vir informados; o valor 0 tem
+significado próprio (reserva de share sem ocupação declarada) e não deve ser
+confundido com ausência de informação.
+
+A migração precisou de correção manual em is_shared: o autogenerate do Alembic
+não inclui server_default, e o SQLite exige valor padrão para adicionar coluna
+NOT NULL em tabela já existente, mesmo vazia. Mesma lição já registrada na
+migração c70c5df8e7e3.
+
+**Alternativas consideradas:**
+- Importar SHARE_NAMES como campo de texto na Reservation — rejeitado por
+  duplicar dado pessoal de terceiro (LGPD) e por produzir texto morto, sem
+  vínculo navegável até a reserva do share.
+- Casar reservas irmãs por quarto + data de chegada idêntica — rejeitado após
+  encontrar 14 pares reais com chegadas em dias diferentes.
+- Tabela de vínculo persistente entre reservas irmãs — rejeitado por
+  complexidade desproporcional nesta fase.
+
+**Status:** Aprovado.
