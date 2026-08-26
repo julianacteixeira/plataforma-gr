@@ -15,6 +15,10 @@ class Reservation(db.Model):
     dept_traces = db.Column(db.Text, nullable=True)
     confirmed_eta = db.Column(db.String(5), nullable=True)
     contact_status = db.Column(db.String(20), nullable=False, default="pendente")
+    opera_status = db.Column(db.String(10), nullable=True)
+    is_shared = db.Column(db.Boolean, nullable=False, default=False)
+    adults = db.Column(db.Integer, nullable=True)
+    children = db.Column(db.Integer, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
