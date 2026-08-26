@@ -1481,3 +1481,92 @@ migração c70c5df8e7e3.
   complexidade desproporcional nesta fase.
 
 **Status:** Aprovado.
+
+## [2026-08-26] Incidente: correção de dado aplicada na camada errada
+
+**Contexto:** durante a verificação de estado ao retomar o projeto,
+descobriu-se que duas correções de dado da migração 34c2442a159b (aplicada em
+2026-08-16, banco em head) nunca surtiram efeito no banco. Esta entrada
+registra o incidente, a causa raiz e as regras derivadas dele.
+
+**O que estava errado:**
+- As 3 categorias ALL Signature continuavam com scope = "guest" em vez de
+  "stay" (decisão de 2026-08-12, item 14).
+- "Pedido de Desculpas" continuava com manual_only = False em vez de True
+  (decisão de 2026-08-12, item 13).
+- Category.opera_rate_code nunca foi preenchido em nenhuma categoria: os
+  valores ALSIG1, ALSIG2, ALSIG3 e ACO (decisão de 2026-08-12, itens 15 e 15b)
+  foram decididos, o campo foi criado pela migração, mas nenhum valor chegou a
+  ser gravado.
+
+**Gravidade:** Category.scope é o que decide, em tempo de execução, se um
+badge vai para guest_badges (permanente, ligado ao hóspede) ou stay_badges
+(ligado à estadia) — decisão de 2026-08-12, item 7. Com scope = "guest", um
+hóspede que resgatou uma experiência ALL Signature uma única vez carregaria
+esse selo em todas as estadias futuras. A falha não gera erro visível: o badge
+é criado normalmente, apenas na tabela errada. Sem opera_rate_code, a
+importação não reconheceria nenhuma reserva ALL Signature nem a tarifa ACO.
+
+**Investigação:** os nomes usados na cláusula WHERE da migração batiam byte a
+byte com os nomes reais no banco — acentuação, espaços e grafia idênticos
+(verificado com repr()). A hipótese de erro de digitação foi descartada.
+
+**CAUSA RAIZ:** a correção estava na camada errada. O scope das categorias
+nasce em app/seeds/categories.py, não numa migração. Num banco novo a ordem é:
+(1) flask db upgrade cria as tabelas e roda o UPDATE — com a tabela categories
+ainda VAZIA, afetando zero linhas; (2) flask seed-categories insere as
+categorias com os valores do arquivo de seed, que continuava errado. A
+correção se perderia em todo ambiente novo: computador do trabalho, máquina
+reinstalada, ou futura migração para PostgreSQL. No banco atual, o efeito foi
+o mesmo por um caminho ou outro (arquivo de migração possivelmente editado
+após já ter sido aplicado, ou falha no meio da migração em modo batch) — mas a
+causa estrutural, que se repetiria sempre, é a camada errada.
+
+**REGRA NOVA 1 — correção de dado semente vai no arquivo de seed, nunca numa
+migração.** Migração de dado corrige um banco, uma vez. O seed corrige todo
+banco, sempre, e pode ser reexecutado sem efeito colateral. Migração de dado
+só se justifica para dado operacional criado em runtime, que não tem seed
+correspondente.
+
+**REGRA NOVA 2 — migração que altera dado deve verificar rowcount.** Um
+op.execute("UPDATE ...") que não encontra nenhuma linha NÃO gera erro: afeta
+zero linhas e a migração conclui com sucesso. Toda migração que altere dado
+deve usar op.get_bind() e conferir result.rowcount, levantando RuntimeError se
+o número de linhas afetadas for diferente do esperado. Exemplo do padrão:
+
+```python
+conn = op.get_bind()
+result = conn.execute(sa.text("UPDATE categories SET scope = 'stay' WHERE ..."))
+if result.rowcount != 3:
+    raise RuntimeError(
+        f"Esperava atualizar 3 categorias, atualizou {result.rowcount}."
+    )
+```
+
+Erro barulhento é preferível a dado errado dormindo no banco.
+
+**Correção aplicada (commit 9620dd2):** app/seeds/categories.py corrigido —
+scope das 3 ALL Signature para "stay", manual_only de "Pedido de Desculpas"
+para True, e opera_rate_code preenchido em 4 categorias (ALSIG1, ALSIG2,
+ALSIG3, ACO). Nenhuma migração de correção foi necessária: o seed atualiza
+categorias já existentes além de criar as ausentes, então flask
+seed-categories corrigiu o banco atual no mesmo movimento. Verificado após a
+execução: 29 categorias no banco (0 criadas / 29 atualizadas), com 6
+always_apply, 3 manual_only e 4 opera_rate_code preenchidos — todos os totais
+batendo com o esperado.
+
+**LIÇÃO DE PROCESSO — documentação desatualizada não é evidência contra o
+código.** Durante esta mesma sessão, uma instrução foi emitida afirmando que
+"ALL Limitless" faltava no arquivo de seed. A afirmação foi deduzida da
+diferença entre as 29 categorias do banco e o número 28 citado na documentação
+— mas a documentação era justamente a parte desatualizada. A categoria já
+estava no seed (o commit a9cff5a fizera a coisa certa: banco e seed juntos). A
+execução da instrução criou uma entrada duplicada, percebida e removida antes
+do commit; nenhuma duplicata foi salva.
+
+Reforça a regra já existente do projeto: arquivo em disco é fonte da verdade,
+inclusive contra a documentação do próprio projeto. Prompts destinados ao
+Claude Code passam a incluir a instrução: "se qualquer premissa desta
+instrução não bater com o arquivo real, PARE e relate ANTES de editar."
+
+**Status:** Aprovado.
