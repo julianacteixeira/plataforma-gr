@@ -54,10 +54,11 @@ fechados durante a implementação, quando for possível visualizar as telas.
 | email | string | opcional |
 | phone | string | opcional |
 | opera_guest_id | string | opcional, único quando presente — identificador do perfil do hóspede no Opera Cloud (GUEST_NAME_ID) |
-| vip | boolean | true quando o hóspede tem pelo menos um GuestBadge ativo (ver tabela GuestBadge) |
+| vip | boolean | true quando o hóspede tem pelo menos um GuestBadge ativo — badges de estadia (StayBadge) não afetam este campo (ver tabelas GuestBadge e StayBadge) |
 | all_member | boolean | participa do programa de fidelidade ALL |
 | all_card_number | string | opcional, preenchido se all_member=true |
 | pmid | string | opcional, PMID do hóspede no ALL |
+| preferences | text | opcional, texto livre (decisão de 2026-08-06, item 6) |
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
@@ -65,20 +66,23 @@ fechados durante a implementação, quando for possível visualizar as telas.
 
 ## GuestBadge (selo do hóspede)
 
-Substitui o antigo campo Guest.vip_category (ver decisão de 2026-08-02
-em decision-log.md). Um hóspede pode ter vários badges independentes,
-cada um com sua própria origem e status.
+Um hóspede pode ter vários badges independentes, cada um com sua própria
+origem e status.
 
 | Campo | Tipo | Observação |
 |---|---|---|
 | id | integer | PK |
 | guest_id | integer | FK -> Guest |
-| label | string | ex: "Gold", "Habitué", "Aniversário", "Colaborador Accor" |
-| source | string | "all_tier", "keyword_suggestion", "stay_count" ou "manual" |
+| category_id | integer | FK -> Category, restrito a categorias com scope="guest" (decisão de 2026-08-03, "Desenho revisado de schema") |
+| source | string | "all_tier", "keyword_suggestion", "stay_count", "manual" ou "rate_code" (decisão de 2026-08-12, item 12) |
 | status | string | "active", "suggested" ou "rejected" |
 | created_by_id | integer | FK -> User, opcional — nulo quando source é automático |
 | created_at | timestamp | |
 | updated_at | timestamp | |
+
+Nota: o campo `label` (texto livre) foi removido e substituído por
+`category_id` (decisão de 2026-08-03, "Desenho revisado de schema: Category,
+ItemType, StayBadge, GuestLink").
 
 
 
@@ -116,18 +120,24 @@ cadastro futura).
 | room_number | string | quarto "padrão" da reserva |
 | reservation_code | string | único — chave usada para evitar importação duplicada |
 | source | string | valores em aberto (ex: manual, opera_cloud) |
-| notes | text | opcional — observações vindas do Opera Cloud (RES_COMMENT), cada uma em um parágrafo, na ordem em que aparecem no relatório |
-| created_at | timestamp | |
+| dept_traces | text | opcional — traces internos do Opera (G_DEPT_ID), um parágrafo por trace, formato `[DEPT_ID - data] texto` (decisão de 2026-08-12) |
+| confirmed_eta | string | opcional, formato HH:MM — ETA confirmado manualmente pela equipe, distinto do ETA do Opera Cloud (decisão de 2026-08-03) |
+| contact_status | string | default "pendente" — status de contato prévio com o hóspede (decisão de 2026-08-03) |
+| opera_status | string(10) | opcional — código cru de SHORT_RESV_STATUS do Opera, sem tradução; nulo em reservas não vindas do Opera. "CXL" = cancelada, "CKIN" = hóspede em check-in, demais valores = ativa (decisão de 2026-08-26) |
+| is_shared | boolean | default False — indica reserva de quarto compartilhado (IS_SHARED_YN do Opera). O agrupamento entre reservas irmãs é calculado em consulta, não persistido (decisão de 2026-08-26) |
+| adults | integer | opcional — pode vir 0 em reservas de share, onde a ocupação é declarada na reserva âncora do grupo (decisão de 2026-08-26) |
+| children | integer | opcional — mesma observação de `adults` (decisão de 2026-08-26) |
+| created_at | timestamp | nullable no código; padronização para nullable=False pendente (ver current-state.md) |
+
+Nota: o campo `notes` (texto único com todos os comentários) foi removido e
+substituído pela tabela `ReservationNote` (decisão de 2026-08-12, item 3).
 
 
 
 ## VipPlan (Planejamento de Vipagem)
 
 Representa um planejamento em um dia específico dentro de uma reserva.
-
 Uma reserva pode ter vários VipPlans (ex: chegada, aniversário, saída).
-
-
 
 | Campo | Tipo | Observação |
 |---|---|---|
@@ -137,6 +147,7 @@ Uma reserva pode ter vários VipPlans (ex: chegada, aniversário, saída).
 | room_number_override | string | opcional — só preenchido se o quarto daquele dia for diferente do da reserva |
 | status | string | valores em aberto (ex: planejado, em preparação, concluído, cancelado) |
 | delivery_status | string | valores em aberto (ex: pendente, entregue) — aplicado ao conjunto inteiro |
+| ready_for_delivery | boolean | default False — toggle "Tudo pronto" da seção "VIPs do dia"; desliga automaticamente a cada edição do VipPlan após já estar ligado, forçando nova revisão humana (decisão de 2026-08-06, item 1) |
 | delivered_at | timestamp | opcional, preenchido quando delivery_status = entregue |
 | delivered_by_id | integer | FK -> User, opcional, quem confirmou a entrega |
 | created_by_id | integer | FK -> User |
@@ -148,21 +159,17 @@ Uma reserva pode ter vários VipPlans (ex: chegada, aniversário, saída).
 ## VipItem (Item de Vipagem)
 
 Um item individual dentro de um VipPlan. Pode ser editado (descrição,
-
 custo, disponibilidade) independentemente dos outros itens do mesmo
-
 planejamento; a confirmação de entrega, porém, é feita no nível do
-
 VipPlan (conjunto), não item por item.
-
-
 
 | Campo | Tipo | Observação |
 |---|---|---|
 | id | integer | PK |
 | vip_plan_id | integer | FK -> VipPlan |
-| description | string | editável a qualquer momento |
-| cost | decimal | editável a qualquer momento |
+| item_type_id | integer | FK -> ItemType, obrigatório (decisão de 2026-08-03, item 6) |
+| description | string | opcional — reservado para observação específica da instância do item (ex: "sem açúcar"); o nome do item vem de ItemType (decisão de 2026-08-03, item 6) |
+| cost | decimal | opcional, Numeric(10, 2) |
 | responsible_id | integer | FK -> User |
 | availability_status | string | valores em aberto (ex: planejado, indisponível, substituído) |
 | created_at | timestamp | |
