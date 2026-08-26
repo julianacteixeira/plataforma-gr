@@ -62,6 +62,28 @@ fechados durante a implementação, quando for possível visualizar as telas.
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
+## GuestLink (vínculo manual de perfis duplicados)
+
+Vínculo manual entre dois registros de Guest que representam a mesma pessoa
+com perfis diferentes no Opera — a detecção automática por similaridade de
+nome permanece pós-MVP (decisão de 2026-08-03, "Revisão de escopo:
+GuestBadge...", item 2).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| primary_guest_id | integer | FK -> Guest |
+| secondary_guest_id | integer | FK -> Guest |
+| created_by_id | integer | FK -> User |
+| created_at | timestamp | |
+
+Constraint única no banco: `(primary_guest_id, secondary_guest_id)` — impede
+cadastrar o mesmo par duas vezes na mesma direção. Não impede o par inverso
+(secundário → principal) ser cadastrado como um segundo vínculo; o tratamento
+disso fica a cargo da tela, ainda não desenhada. Restrição existente no
+código, sem decisão registrada em decision-log.md; documentada aqui como fato
+observado.
+
 
 
 ## GuestBadge (selo do hóspede)
@@ -83,6 +105,25 @@ origem e status.
 Nota: o campo `label` (texto livre) foi removido e substituído por
 `category_id` (decisão de 2026-08-03, "Desenho revisado de schema: Category,
 ItemType, StayBadge, GuestLink").
+
+## StayBadge (selo da estadia)
+
+Complementa GuestBadge: cobre categorias de evento ligadas à reserva/estadia
+específica (scope="stay"), não ao hóspede — evita que um badge de ocasião
+pontual (ex: Aniversário) apareça permanentemente em estadias futuras do
+mesmo hóspede (decisão de 2026-08-03, "Revisão de escopo: GuestBadge...",
+item 1, e "Desenho revisado de schema", item 3).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| reservation_id | integer | FK -> Reservation — não VipPlan, para preservar o histórico agregado da estadia inteira mesmo com múltiplos VipPlans na mesma reserva (decisão de 2026-08-03, "Desenho revisado de schema", item 3) |
+| category_id | integer | FK -> Category, restrito a categorias com scope="stay" |
+| source | string(30) | "keyword_suggestion", "manual" ou "rate_code" — os dois primeiros da decisão de 2026-08-03 ("Desenho revisado de schema", item 3), o terceiro para categorias identificadas por Category.opera_rate_code (decisão de 2026-08-12, item 12) |
+| status | string(20) | "active", "suggested" ou "rejected" |
+| created_by_id | integer | FK -> User, opcional — nulo quando source é automático |
+| created_at | timestamp | |
+| updated_at | timestamp | |
 
 
 
@@ -106,6 +147,44 @@ bater).
 Sem unicidade de `(category_id, keyword)` no banco — checagem de
 duplicidade fica a cargo do código que popula a tabela (seed ou tela de
 cadastro futura).
+
+## Category (categoria/badge)
+
+Substitui o uso de texto livre como categoria de badge (decisão de 2026-08-03,
+"Desenho revisado de schema"). O campo `scope` é o que decide, em tempo de
+execução, se um badge derivado desta categoria vai para `guest_badges`
+(persistente, ligado ao hóspede) ou `stay_badges` (ligado à estadia) —
+decisão de 2026-08-12, item 7.
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| name | string(50) | único |
+| scope | string(10) | "guest" ou "stay" — decide o roteamento de badge (GuestBadge vs. StayBadge), ver contexto acima (decisão de 2026-08-12, item 7) |
+| group_number | integer | 1 a 6, faixa de custo/importância, independente de suggestion_priority (decisão de 2026-08-03, "Desenho revisado de schema") |
+| always_apply | boolean | default False — quando True, soma itens com as demais always_apply presentes, ignora o ranking normal (decisão de 2026-08-06, "Fechamento definitivo: Category") |
+| manual_only | boolean | default False — quando True, nunca entra automaticamente na sugestão (decisão de 2026-08-06, "Fechamento definitivo: Category") |
+| suggestion_priority | integer | opcional (nullable=True) — categorias always_apply não têm posição no ranking, ficam com o campo vazio (decisão de 2026-08-06, "Fechamento definitivo: Category") |
+| active | boolean | default True |
+| opera_rate_code | string(20) | opcional, único quando preenchido — código de tarifa/produto do Opera (RATE_CODE) que identifica a categoria por campo estruturado, sem depender de busca em texto (decisão de 2026-08-12, item 12) |
+
+## CategoryItemTemplate (template de item por categoria)
+
+Define quais itens (ItemType) são sugeridos automaticamente para uma
+Category, com variação binária por presença de criança na reserva (decisão de
+2026-08-03, "Desenho revisado de schema", item 5).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| category_id | integer | FK -> Category |
+| item_type_id | integer | FK -> ItemType |
+| requires_child | boolean | opcional (nullable=True) — null significa indiferente à presença de criança; true/false distingue a variação do item, nunca por quantidade de crianças (decisão de 2026-08-03, "Desenho revisado de schema", item 5) |
+
+Constraint única no banco: `(category_id, item_type_id, requires_child)` —
+impede cadastrar o mesmo item duas vezes para a mesma categoria na mesma
+variação de criança. Restrição existente no código, sem decisão registrada em
+decision-log.md; documentada aqui como fato observado.
 
 
 
@@ -131,6 +210,20 @@ cadastro futura).
 
 Nota: o campo `notes` (texto único com todos os comentários) foi removido e
 substituído pela tabela `ReservationNote` (decisão de 2026-08-12, item 3).
+
+## ReservationNote (comentário da reserva)
+
+Substitui o antigo campo `Reservation.notes` (texto único). Cada
+RES_COMMENT do XML vira uma linha própria, permitindo filtro real por tipo
+nas telas futuras (decisão de 2026-08-12, item 3).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| reservation_id | integer | FK -> Reservation |
+| comment_type | string(20) | valor de RES_COMMENT_TYPE (ex: GEN, RES, CAS) |
+| order_by | integer | ORDEM DE LEITURA do comentário dentro da reserva (1, 2, 3...), atribuída pelo parser conforme a sequência em que aparecem no XML — NÃO é o valor de RES_COMMENT_ORDER_BY do Opera, que é constante por tipo de comentário e não reflete a ordem real (decisão de 2026-08-26, "Estrutura confirmada do XML RES_DETAIL e correção de order_by") |
+| text | text | |
 
 
 
@@ -267,6 +360,22 @@ automática via eventos do SQLAlchemy no pós-MVP (Opção B).
 | action | string | valores em aberto (ex: criado, alterado, status alterado) |
 | details | string | descrição legível da mudança |
 | timestamp | timestamp | |
+
+## InstitutionalDate (data institucional)
+
+Marcações do mini-calendário da Home (feriados, reuniões, fechamentos do
+resort — eventos institucionais, não eventos de hóspede/VipPlan). Sem campo
+de descrição longa, por decisão de manter a marcação só visual (decisão de
+2026-08-06, "Decisões técnicas derivadas da entrevista de fluxo/UX", item 5).
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| id | integer | PK |
+| date | date | |
+| name | string(100) | |
+| color | string(20) | |
+| created_by_id | integer | FK -> User |
+| created_at | timestamp | |
 
 
 
