@@ -399,10 +399,12 @@ humanas de vipagem e é imutável por design), ImportLog não é imutável:
 | total_cancelled | integer | |
 | total_errors | integer | |
 
-## ImportError (erro de importação)
+## ImportErrorRecord (erro de importação)
 
 Uma linha por reserva que falhou dentro de um import (decisão de
-2026-08-24 em decision-log.md).
+2026-08-24 em decision-log.md). A classe e a tabela chamam-se
+ImportErrorRecord (não ImportError), para não colidir com a exceção
+nativa do Python de mesmo nome; a tabela no banco é `import_errors`.
 
 | Campo | Tipo | Observação |
 |---|---|---|
@@ -420,39 +422,58 @@ Uma linha por reserva que falhou dentro de um import (decisão de
 
 ## Diagrama de relacionamento
 
-
-
-
+### Hóspede e reservas
 
 Guest (1) ───< tem >─── Reservation (N)
+Guest (1) ───< é o principal em >─── GuestLink (N)
+Guest (1) ───< é o secundário em >─── GuestLink (N)
+Reservation (1) ───< tem >─── ReservationNote (N)
+User (1) ───< registra >─── GuestLink (N)
+
+### Categorias e badges
 
 Guest (1) ───< tem >─── GuestBadge (N)
+Category (1) ───< classifica >─── GuestBadge (N)
+User (1) ───< cria (opcional) >─── GuestBadge (N)
+Reservation (1) ───< tem >─── StayBadge (N)
+Category (1) ───< classifica >─── StayBadge (N)
+User (1) ───< cria (opcional) >─── StayBadge (N)
+Category (1) ───< tem >─── CategoryKeyword (N)
+User (1) ───< cadastra (opcional) >─── CategoryKeyword (N)
+Category (1) ───< tem >─── CategoryItemTemplate (N)
+ItemType (1) ───< referenciado por >─── CategoryItemTemplate (N)
+
+### Vipagem
 
 Reservation (1) ───< pode gerar >─── VipPlan (N)
-
 VipPlan (1) ───< contém >─── VipItem (N)
-
 User (1) ───< cria >─── VipPlan (N)
-
 User (1) ───< confirma entrega de >─── VipPlan (N)
-
 User (1) ───< responsável por >─── VipItem (N)
-
+VipItem (1) ───< referencia >─── ItemType (N)
 User (1) ───< autor de >─── AuditLog (N)
 
-VipItem (1) ───< referencia >─── ItemType (N)
+### Memorando
 
 VipPlan (1) ───< pode gerar (tipo pacote) >─── Memorando (N)
-
 Memorando (1) ───< contém >─── MemorandoLine (N)
-
+Memorando (1) ───< versão anterior de >─── Memorando (N)
 VipItem (1) ───< pode aparecer em >─── MemorandoLine (N)
-
 ItemType (1) ───< referenciado por >─── MemorandoLine (N)
-
 User (1) ───< responsável interno de >─── Memorando (N)
-
 User (1) ───< gerou >─── Memorando (N)
+
+### Importação
+
+User (1) ───< executa >─── ImportLog (N)
+ImportLog (1) ───< registra >─── ImportErrorRecord (N)
+
+### Institucional
+
+User (1) ───< registra >─── InstitutionalDate (N)
+
+Models sem nenhuma foreign key (nem de entrada nem de saída como origem):
+User, Category, ItemType.
 
 
 
