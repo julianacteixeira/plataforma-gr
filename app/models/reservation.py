@@ -22,6 +22,12 @@ class Reservation(db.Model):
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
     reservation_notes = db.relationship("ReservationNote", backref="reservation")
 

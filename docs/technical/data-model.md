@@ -207,6 +207,7 @@ decision-log.md; documentada aqui como fato observado.
 | adults | integer | opcional — pode vir 0 em reservas de share, onde a ocupação é declarada na reserva âncora do grupo (decisão de 2026-08-26) |
 | children | integer | opcional — mesma observação de `adults` (decisão de 2026-08-26) |
 | created_at | timestamp | nullable no código; padronização para nullable=False pendente (ver current-state.md) |
+| updated_at | timestamp | nullable=False, atualizado automaticamente via onupdate (decisão de 2026-08-26) |
 
 Nota: o campo `notes` (texto único com todos os comentários) foi removido e
 substituído pela tabela `ReservationNote` (decisão de 2026-08-12, item 3).
@@ -472,8 +473,8 @@ ImportLog (1) ───< registra >─── ImportErrorRecord (N)
 
 User (1) ───< registra >─── InstitutionalDate (N)
 
-Models sem nenhuma foreign key (nem de entrada nem de saída como origem):
-User, Category, ItemType.
+Models sem nenhuma foreign key DE SAÍDA (não referenciam outra
+tabela, mas são referenciados por várias): User, Category, ItemType.
 
 
 

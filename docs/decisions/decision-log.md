@@ -1570,3 +1570,46 @@ Claude Code passam a incluir a instrução: "se qualquer premissa desta
 instrução não bater com o arquivo real, PARE e relate ANTES de editar."
 
 **Status:** Aprovado.
+
+## [2026-08-26] Novo campo Reservation.updated_at
+
+**Contexto:** verificação de estado em 2026-08-26 encontrou que
+Reservation não possui coluna updated_at, ao contrário de VipPlan,
+VipItem e Guest. A decisão de 2026-08-02 (Trilha 1) já previa a
+necessidade de um "aviso visual" indicando que uma reserva mudou desde
+a última importação, mas deixava o mecanismo em aberto ("definido na
+etapa de UI") — sem um campo de timestamp de última alteração, esse
+aviso não tem como ser implementado depois sem retrabalho no upsert da
+Frente 3, que está prestes a ser escrito.
+
+Investigação do padrão já em uso no projeto (2026-08-26): VipPlan e
+VipItem usam updated_at com onupdate=lambda: datetime.now(timezone.utc)
+e nullable=False; a atualização é sempre automática, nunca setada
+manualmente em rota. Guest tem o mesmo mecanismo, mas sem
+nullable=False (divergência não relacionada a esta decisão, registrada
+à parte em current-state.md). User não possui updated_at (idem).
+
+**Decisão:**
+- Reservation ganha updated_at (DateTime, nullable=False), seguindo
+  exatamente o padrão de VipPlan/VipItem: default e onupdate via
+  datetime.now(timezone.utc), sem atribuição manual em nenhuma rota.
+- Migração aplicada agora, antes do início da Frente 3 (parser +
+  upsert), aproveitando que a tabela reservations está vazia — mesma
+  lição já registrada na migração c70c5df8e7e3 (SQLite exige valor
+  padrão para adicionar coluna NOT NULL em tabela existente, mesmo
+  vazia, pois o autogenerate do Alembic não inclui isso sozinho).
+- O uso concreto deste campo pelo upsert da Frente 3 (ex: comparar
+  updated_at para decidir se algo mudou desde a última importação)
+  fica para a etapa de implementação do parser — esta entrada só
+  fecha a existência do campo e seu padrão técnico.
+
+**Alternativas consideradas:**
+- Deixar para decidir durante a escrita do upsert da Frente 3 —
+  rejeitado por adiar uma decisão de baixo risco (tabela vazia) para
+  um momento de maior complexidade, repetindo o padrão de erro já
+  visto na migração c70c5df8e7e3.
+- Seguir o padrão de Guest (nullable=True) — rejeitado por Guest ser a
+  exceção divergente, não a referência; VipPlan/VipItem representam o
+  padrão consolidado do projeto.
+
+**Status:** Aprovado.
