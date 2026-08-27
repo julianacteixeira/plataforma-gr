@@ -1,26 +1,29 @@
-\# Próximos Passos — Plataforma de Guest Relations
+# Próximos Passos — Plataforma de Guest Relations
 
-## PARADA EM 2026-08-24 — bloqueado aguardando arquivo XML real
+## Próximo passo: Frente 3 — parser Opera Cloud
 
-Frente 3 (parser Opera Cloud) iniciada. ImportLog e ImportErrorRecord
-já implementados e migrados (commit 07f958d). Fatiamento combinado:
-1) parser puro do XML, 2) upsert de Guest, 3) upsert de
-Reservation/ReservationNote/dept_traces, 4) StayBadge via keyword,
-5) orquestração + ImportLog/ImportErrorRecord.
+O bloqueio das 4 tags do XML foi resolvido em 2026-08-26 com acesso a um
+arquivo RES_DETAIL real (698 reservas). Ver decision-log.md, entradas de
+2026-08-26, para a estrutura completa confirmada.
 
-BLOQUEIO: para escrever a Fatia 1 (parser), faltam confirmar os nomes
-exatos de 4 tags do XML RES_DETAIL que NENHUMA decisão registrada
-cobre: check_in, check_out, room_number e o nome do hóspede. As tags
-já confirmadas em decisões anteriores (CONFIRMATION_NO, GUEST_NAME_ID,
-MEMBERSHIP_TYPE, RES_COMMENT, SHORT_RESV_STATUS, DEPT_ID) não incluem
-essas 4. Não adivinhar — próxima sessão deve abrir um arquivo XML real
-(sem dados de hóspede reais expostos fora do ambiente) para extrair só
-a estrutura de tags antes de continuar.
+Desde então, foram corrigidos: bug de dado na camada errada (categorias
+ALL Signature, seed vs. migração — ver decision-log.md, "Incidente:
+correção de dado aplicada na camada errada"), CLAUDE.md atualizado com
+regras de migração/seed e fonte da verdade, data-model.md completo (19
+tabelas documentadas, diagrama de relacionamento cobrindo as 29 FKs
+reais), e Reservation.updated_at implementado (migração 8301e98c75e9).
 
-Próximo passo concreto: obter acesso a um arquivo RES_DETAIL real
-(provavelmente só disponível no computador do trabalho) e extrair a
-estrutura de tags relevante para check_in/check_out/room_number/nome
-do hóspede.
+Fatiamento já combinado para a Frente 3 (inalterado):
+1) parser puro do XML
+2) upsert de Guest
+3) upsert de Reservation/ReservationNote/dept_traces
+4) StayBadge via keyword
+5) orquestração + ImportLog/ImportErrorRecord
+
+PRÓXIMO PASSO CONCRETO: Fatia 0 — gerar um XML sintético anonimizado
+(mesma estrutura de tags do RES_DETAIL real, dados 100% inventados) para
+servir de fixture de teste do parser, sem nunca usar dado real de
+hóspede. Ver regras de LGPD no CLAUDE.md.
 
 
 
