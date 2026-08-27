@@ -132,10 +132,12 @@ fechar o MVP:
   ser criado. Relevante para a Frente 3, onde uma reimportação precisa
   registrar quando a reserva foi atualizada pela última vez. Exige
   entrada no decision-log antes de qualquer migração.
-- Padronizar nullable=False em created_at/updated_at no model Guest,
-  para ficar consistente com VipPlan, VipItem e User (para User, já
-  resolvido pela migração a2a4cd39ed83). Pendência herdada, não
-  reconferida contra as colunas reais em 2026-08-26.
+- Guest.updated_at está nullable=True; VipPlan e VipItem, que têm o
+  mesmo mecanismo (onupdate automático), estão nullable=False.
+  Padronizar Guest para nullable=False. Verificado em 2026-08-26: User
+  NÃO possui coluna updated_at (só created_at, já nullable=False desde
+  a migração a2a4cd39ed83) — a nota anterior deste documento presumia
+  incorretamente que User tinha essa coluna; corrigido aqui.
 - Definir o comportamento de delivered_at/delivered_by_id ao reverter
   uma entrega. Em aberto: limpar os dois campos ou preservar o registro
   anterior.
