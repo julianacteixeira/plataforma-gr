@@ -165,8 +165,10 @@ aprovação explícita da usuária entre os dois.
 
 Ver detalhes em docs/handoff/current-state.md:
 
-- Padronizar `nullable=False` em created_at/updated_at nos models User,
-  Guest e Reservation, para ficarem consistentes com VipPlan e VipItem.
+- Padronizar `nullable=False` em Guest.updated_at e
+  Reservation.created_at, para ficarem consistentes com VipPlan e
+  VipItem. Reservation.updated_at já está no padrão (migração
+  8301e98c75e9); User não possui coluna updated_at.
 - Definir o comportamento de delivered_at/delivered_by_id ao reverter uma
   entrega, quando a funcionalidade de marcar/desmarcar entrega for
   implementada.

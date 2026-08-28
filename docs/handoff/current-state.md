@@ -44,7 +44,7 @@ anonimizado, para servir de fixture de teste do parser).
   banco nem contra flask db downgrade da migração.
 
 ### Banco de dados
-Migração corrente: c161f11a4dd5 (head). 16 arquivos de migração em
+Migração corrente: 8301e98c75e9 (head). 17 arquivos de migração em
 migrations/versions.
 
 20 tabelas no banco (19 do modelo + alembic_version):
@@ -127,17 +127,12 @@ decision-log.md, as duas entradas de 2026-08-26.
 Não bloqueiam o andamento atual, mas devem ser resolvidos antes de
 fechar o MVP:
 
-- Reservation NÃO tem coluna updated_at (verificado em 2026-08-26). Não
-  é um problema de nulidade e sim de ausência: decidir se o campo deve
-  ser criado. Relevante para a Frente 3, onde uma reimportação precisa
-  registrar quando a reserva foi atualizada pela última vez. Exige
-  entrada no decision-log antes de qualquer migração.
-- Guest.updated_at está nullable=True; VipPlan e VipItem, que têm o
-  mesmo mecanismo (onupdate automático), estão nullable=False.
-  Padronizar Guest para nullable=False. Verificado em 2026-08-26: User
-  NÃO possui coluna updated_at (só created_at, já nullable=False desde
-  a migração a2a4cd39ed83) — a nota anterior deste documento presumia
-  incorretamente que User tinha essa coluna; corrigido aqui.
+- Padronizar nullable=False em created_at/updated_at nos models que
+  ainda divergem do padrão de VipPlan/VipItem: Guest.updated_at
+  (nullable=True) e Reservation.created_at (sem nullable=False,
+  verificado em 2026-08-28). Reservation.updated_at já nasceu no
+  padrão correto (migração 8301e98c75e9). User não possui coluna
+  updated_at.
 - Definir o comportamento de delivered_at/delivered_by_id ao reverter
   uma entrega. Em aberto: limpar os dois campos ou preservar o registro
   anterior.
