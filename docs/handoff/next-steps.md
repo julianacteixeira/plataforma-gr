@@ -174,6 +174,11 @@ Ver detalhes em docs/handoff/current-state.md:
   implementada.
 - Definir a regra de cascata ao apagar um VipPlan (o que acontece com os
   VipItems ligados a ele). Nenhum ondelete foi definido nas FKs.
+- Desenhar, na Fatia 3 (upsert de Reservation), o tratamento para o caso
+  de GUEST_NAME_ID de uma reserva ja existente vir diferente numa
+  reimportacao (correcao de titularidade feita pela recepcao no ato do
+  check-in). Ver decision-log.md, entrada "[2026-08-28] Contagem de
+  stay_count por periodo de estadia".
 
 
 

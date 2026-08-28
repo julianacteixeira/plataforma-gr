@@ -1613,3 +1613,82 @@ nullable=False (divergência não relacionada a esta decisão, registrada
   padrão consolidado do projeto.
 
 **Status:** Aprovado.
+
+## [2026-08-28] Contagem de stay_count por período de estadia, não por linha de Reservation
+
+**Contexto:** durante o planejamento da Fatia 0 (fixture de teste do parser
+Opera Cloud), a usuária trouxe um cenário real de operação ainda não coberto
+por nenhuma decisão: um hóspede membro do programa ALL pode reservar,
+usando seu próprio perfil (para aproveitar desconto e/ou pontos), um ou
+mais quartos que serão fisicamente ocupados por terceiros (amigos,
+familiares). A titularidade correta às vezes só é esclarecida no ato do
+check-in pela recepção, e pode ser corrigida no Opera depois da reserva
+original. A regra de 2026-08-02 contava stay_count por linha de
+Reservation vinculada ao mesmo opera_guest_id, o que infla artificialmente
+a contagem nesse cenário — um membro pode acumular 5+ reservas sem nunca
+ter se hospedado fisicamente nenhuma vez.
+
+**Decisão:**
+- A contagem de stay_count (para o badge "Habitué/Habituée") passa a
+  agrupar as reservas do mesmo opera_guest_id em períodos de estadia, não
+  em linhas de Reservation cruas. Duas reservas entram no mesmo período
+  quando suas datas se sobrepõem, OU quando o check-out de uma coincide,
+  no mesmo dia, com o check-in da outra (gap zero — reservas onde, na
+  prática operacional, o hóspede não sai fisicamente do quarto, havendo
+  apenas troca de diária/tarifa registrada no PMS).
+- O agrupamento ignora o número do quarto — o que importa é a
+  continuidade de presença do hóspede, não onde ele ficou.
+- O badge continua sendo sugerido a partir de 5 ou mais períodos
+  distintos (limiar já aprovado em 2026-08-02, inalterado).
+- A sugestão de vipagem (StayBadge) não muda — continua vinculada a
+  Reservation, não a Guest. Isso significa que, quando um membro reserva
+  simultaneamente para dois amigos em quartos diferentes, cada reserva
+  continua gerando sua própria sugestão de forma independente, permitindo
+  que a equipe decida manualmente qual quarto é a ocupação real — nenhuma
+  mudança de código é necessária para este comportamento, que já decorre
+  do desenho existente (StayBadge por reserva, não por hóspede).
+
+**Limitações conhecidas e aceitas (mantidas conscientemente, não
+resolvidas nesta decisão):**
+
+1. Reservas do mesmo opera_guest_id em datas não sobrepostas e não
+   contíguas (ex: um quarto reservado para um amigo em julho, outro para
+   outro amigo em setembro, sem o titular nunca ter se hospedado) ainda
+   contam como períodos distintos. Resolver isso exigiria saber quem
+   ocupou fisicamente cada quarto, informação que o relatório Opera não
+   fornece — mesma limitação já registrada no épico de resolução de
+   identidade (backlog.md, pós-MVP).
+2. O badge all_tier (Gold/Platinum/Diamond/Limitless) continua nascendo
+   com status "active" automaticamente, a partir do MEMBERSHIP_TYPE
+   presente na reserva, sem verificar presença física do membro. Pesquisa
+   feita nesta sessão confirma que os próprios termos do programa ALL da
+   Accor são variáveis quanto à exigência de presença para elegibilidade
+   de pontos e benefícios (dependendo de tarifa, canal de reserva e
+   promoções vigentes) — não existe uma regra fixa e universal que o
+   sistema pudesse aplicar, e o relatório Opera não distingue isso de
+   qualquer forma. Comportamento de all_tier mantido como estava; risco
+   aceito conscientemente, no mesmo espírito da decisão de 2026-08-02.
+
+**Pendência derivada, fora do escopo desta entrada (ver next-steps.md e
+backlog.md):**
+- O upsert de Reservation (Fatia 3 da Frente 3) precisa decidir como
+  tratar o caso de o GUEST_NAME_ID de uma reserva já existente (mesmo
+  reservation_code) vir diferente numa reimportação — cenário real de
+  correção de titularidade pela recepção. Ainda não desenhado.
+- Nova funcionalidade de MVP: tela/rota para reatribuir manualmente o
+  hóspede vinculado a uma reserva, sem depender de esperar uma
+  reimportação do Opera.
+
+**Alternativas consideradas:**
+- Manter a contagem por linha de Reservation crua — rejeitada, por gerar
+  falsos positivos sistemáticos em membros que reservam com frequência
+  para terceiros.
+- Tentar identificar via keyword/nota quem ocupa fisicamente o quarto —
+  rejeitada nesta fase; o relatório não oferece sinal confiável para
+  isso, e criar heurística arriscaria mais falsos positivos do que a
+  contagem por período já resolve.
+- Mudar all_tier para nascer como "suggested" em vez de "active" —
+  rejeitada; reverteria uma decisão já aprovada sem ganho claro, dado que
+  a verificação de presença física é inviável de qualquer forma.
+
+**Status:** Aprovado.

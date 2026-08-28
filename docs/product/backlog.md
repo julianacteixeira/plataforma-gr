@@ -38,6 +38,10 @@ Legenda: \[ ] pendente · \[x] concluído · (P) requer decisão pendente
 
 \- \[ ] Registrar categoria de VIP
 
+\- \[ ] Reatribuir manualmente o hospede vinculado a uma reserva (correcao
+  de titularidade sem depender de reimportacao - ver decision-log.md,
+  2026-08-28)
+
 
 
 \### Vipagem
