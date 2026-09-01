@@ -20,10 +20,16 @@ Fatiamento já combinado para a Frente 3 (inalterado):
 4) StayBadge via keyword
 5) orquestração + ImportLog/ImportErrorRecord
 
-PRÓXIMO PASSO CONCRETO: Fatia 0 — gerar um XML sintético anonimizado
-(mesma estrutura de tags do RES_DETAIL real, dados 100% inventados) para
-servir de fixture de teste do parser, sem nunca usar dado real de
-hóspede. Ver regras de LGPD no CLAUDE.md.
+Fatia 0 (fixture sintético) CONCLUÍDA em 2026-08-28 (commit b08e0e7):
+comando `flask generate-test-fixtures` (app/cli/test_fixtures.py) gera
+tests/fixtures/res_detail_sintetico.xml (40 reservas, 28 cenários de
+negócio combinados) e tests/fixtures/res_detail_sintetico_v2.xml
+(reimportação, cenários 23 e 26). Ver
+docs/technical/opera-field-reference.md para o mapeamento de campos
+confirmado contra o relatório real.
+
+PRÓXIMO PASSO CONCRETO: Fatia 1 — parser puro do XML (RES_DETAIL →
+estruturas Python), ainda não iniciada.
 
 
 

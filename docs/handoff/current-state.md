@@ -1,6 +1,6 @@
 # Estado Atual do Projeto — Plataforma de Guest Relations
 
-**Última atualização:** 2026-08-26
+**Última atualização:** 2026-08-28
 
 ## Fase atual
 
@@ -8,20 +8,26 @@ Backend em construção, sem nenhuma interface. O banco tem 19 tabelas
 aplicadas e a autenticação funciona. A frente ativa é a importação do
 relatório RES_DETAIL do Opera Cloud, dividida em 3 frentes: schema
 (concluída), seed de palavras-chave (concluída) e módulo de importação
-(não iniciada).
+(em andamento — Frente 3, Fatia 0 concluída).
 
 O bloqueio registrado em 2026-08-24 — faltavam os nomes de 4 tags do XML
 — foi RESOLVIDO em 2026-08-26 com acesso a um arquivo RES_DETAIL real de
 698 reservas. A Frente 3 está liberada para começar.
 
-Próximo passo concreto: Fatia 0 da Frente 3 (gerador de XML sintético
-anonimizado, para servir de fixture de teste do parser).
+A Fatia 0 da Frente 3 (fixture sintético) foi concluída em 2026-08-28
+(commits até b08e0e7): 40 reservas + arquivo de reimportação, cobrindo 28
+cenários de negócio, incluindo o mapeamento de campos
+title/RES_COMMENT/GTV_TRACE_ON confirmado contra um relatório real.
+Próximo passo: Fatia 1 (parser puro do XML).
 
 ## O que já existe
 
 ### Documentação
 - Produto e decisões: docs/product/vision.md, docs/product/backlog.md,
   docs/decisions/decision-log.md.
+- Referência de campos do Opera Cloud confirmados contra um relatório
+  real: docs/technical/opera-field-reference.md (comentários de reserva,
+  título, traces internos).
 - Modelo de dados completo em docs/technical/data-model.md: as 19
   tabelas documentadas, com diagrama de relacionamento organizado em 6
   blocos temáticos (commits 06d1e48, 2a4a423, f6b7698).
@@ -88,6 +94,15 @@ escopo do AuditLog, podendo ser limpas no futuro.
 ### Importação Opera Cloud — Frente 2 (seed de keywords): CONCLUÍDA
 app/seeds/category_keywords.py, comando `flask seed-category-keywords`,
 idempotente. 140 keywords em 18 categorias.
+
+### Importação Opera Cloud — Frente 3, Fatia 0 (fixture sintético): CONCLUÍDA
+app/cli/test_fixtures.py, comando `flask generate-test-fixtures` (commits
+8f21f96 e b08e0e7). Gera tests/fixtures/res_detail_sintetico.xml (40
+reservas, 28 cenários de negócio combinados: status, share de quarto,
+fidelidade ALL, rate codes, comentários/keywords, traces) e
+tests/fixtures/res_detail_sintetico_v2.xml (reimportação, cenários 23 e
+26 — quarto atribuído depois e correção de titularidade). Todos os dados
+são inventados. Próxima etapa: Fatia 1 (parser puro do XML).
 
 ### Correção do incidente de camada errada (commit 9620dd2)
 Descoberto em 2026-08-26 que duas correções de dado embutidas na
