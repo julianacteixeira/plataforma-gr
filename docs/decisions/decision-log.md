@@ -1692,3 +1692,54 @@ backlog.md):**
   a verificação de presença física é inviável de qualquer forma.
 
 **Status:** Aprovado.
+
+## [2026-08-28] Campo title em ReservationNote e correção sobre RES_COMMENT_TYPE
+
+**Contexto:** durante investigação de campos ainda não mapeados do relatório
+RES_DETAIL (Fatia 0), análise de um arquivo real e comparação direta com a
+interface do Opera Cloud revelaram duas coisas: (1) o campo
+RES_COMMENT_DESCRIPTION carrega informação própria, não redundante com
+RES_COMMENT_TYPE; (2) o dicionário de códigos usado pelo campo
+RES_COMMENT_TYPE no relatório é diferente do dicionário de tipos mostrado na
+interface de usuário do Opera — achado que corrige uma suposição implícita
+das decisões anteriores sobre este campo.
+
+**Decisão:**
+- Nova coluna title (String, nullable=True) em ReservationNote, vinda de
+  RES_COMMENT_DESCRIPTION. Migração a ser desenhada quando a Frente 3
+  chegar à implementação do model (Fatia 3), seguindo o fluxo normal de
+  Prompt A/Prompt B já estabelecido.
+- O código de tipo exportado no relatório (RES_COMMENT_TYPE) é tratado como
+  campo opaco pelo parser, sem tentativa de tradução automática para o tipo
+  da interface — reafirma e reforça a decisão de 2026-08-12, agora com
+  motivo mais concreto: confirmado que RES_COMMENT_TYPE = "CAS" agrega, no
+  mínimo, notas que são "OCC" (Occorrencias) e "GIFT" na interface, e que
+  esse mapeamento pode não estar completo.
+- Detalhamento do mapeamento (parcial, em atualização contínua) e das listas
+  completas de códigos (tipos de comentário e departamentos de trace) fica
+  em novo arquivo docs/technical/opera-field-reference.md, não neste log —
+  por ser fato observável do Opera, sujeito a expansão incremental conforme
+  mais casos forem identificados, e não uma escolha do projeto sujeita a
+  aprovação formal a cada atualização.
+- Campo CF_NOTE_DESC do relatório confirmado como redundante com
+  RES_COMMENT_DESCRIPTION (idêntico em 99,4% dos casos analisados) — não
+  será utilizado no model.
+- Estrutura de G_DEPT_ID totalmente confirmada: DEPT_ID (código),
+  GTV_TRACE_ON (data), TRACE_TEXT (texto) — resolve a lacuna deixada em
+  2026-08-12, item 6, que não tinha os nomes exatos das tags.
+
+**Pendência registrada (não bloqueante):** a regra de exibição de comentários
+definida em 2026-08-12, item 3 ("mostrar RES/CAS por padrão, esconder GEN")
+foi pensada assumindo um domínio de apenas 3 tipos de comentário. O domínio
+real da interface tem 11 tipos possíveis. Revisar esta regra quando a fase
+de telas (ainda não iniciada) chegar ao desenho da exibição de comentários
+de reserva.
+
+**Alternativas consideradas:**
+- Registrar as listas de código diretamente nesta entrada — rejeitado; o
+  mapeamento CAS->tipos de interface está confirmadamente incompleto e vai
+  crescer com uso continuado, o que fragmentaria o registro em várias
+  entradas de decisão ao longo do tempo. Um arquivo de referência editável
+  diretamente é mais adequado a um fato que se acumula aos poucos.
+
+**Status:** Aprovado.
