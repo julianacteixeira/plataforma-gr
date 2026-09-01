@@ -46,4 +46,12 @@ def create_app():
         print(f"Keywords criadas: {criadas}")
         print(f"Keywords puladas (já existiam): {puladas}")
 
+    @app.cli.command("generate-test-fixtures")
+    def generate_test_fixtures_command():
+        """Gera os arquivos XML sintéticos de teste do parser Opera Cloud (dados 100% inventados, sem dado real de hóspede)."""
+        from app.cli.test_fixtures import run
+        arquivos, reservas = run()
+        print(f"Arquivos gerados: {arquivos}")
+        print(f"Total de reservas geradas: {reservas}")
+
     return app
