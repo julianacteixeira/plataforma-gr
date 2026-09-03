@@ -19,3 +19,6 @@ desktop.ini
 
 # Arquivos do VS Code (opcional, pessoal)
 .vscode/
+
+# Arquivos do Visual Studio (workspace local)
+.vs/
