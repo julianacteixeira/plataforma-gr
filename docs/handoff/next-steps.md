@@ -28,8 +28,18 @@ negócio combinados) e tests/fixtures/res_detail_sintetico_v2.xml
 docs/technical/opera-field-reference.md para o mapeamento de campos
 confirmado contra o relatório real.
 
-PRÓXIMO PASSO CONCRETO: Fatia 1 — parser puro do XML (RES_DETAIL →
-estruturas Python), ainda não iniciada.
+Fatia 1 (parser puro do XML) CONCLUÍDA em 2026-09-03 (commit 233d8c8b):
+app/integrations/opera_cloud/parser.py, função parse_res_detail. Ver
+current-state.md para detalhes técnicos completos.
+
+PRÓXIMO PASSO CONCRETO: Fatia 2 — upsert de Guest, ainda não iniciada.
+Antes do código, é preciso decidir: como identificar se um Guest é novo
+ou já existente (chave opera_guest_id); o que fazer quando o FULL_NAME
+vem diferente para o mesmo opera_guest_id numa reimportação; e como
+isso se relaciona com a pendência já registrada em 2026-08-28 sobre
+correção de titularidade (GUEST_NAME_ID diferente numa reimportação da
+mesma reservation_code). Essas decisões de comportamento serão
+propostas em texto, para aprovação, antes de qualquer código de upsert.
 
 
 

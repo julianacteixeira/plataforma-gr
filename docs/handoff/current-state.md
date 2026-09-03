@@ -18,7 +18,25 @@ A Fatia 0 da Frente 3 (fixture sintético) foi concluída em 2026-08-28
 (commits até b08e0e7): 40 reservas + arquivo de reimportação, cobrindo 28
 cenários de negócio, incluindo o mapeamento de campos
 title/RES_COMMENT/GTV_TRACE_ON confirmado contra um relatório real.
-Próximo passo: Fatia 1 (parser puro do XML).
+
+A Fatia 1 da Frente 3 (parser puro do XML) foi concluída em 2026-09-03
+(commit 233d8c8b): novo módulo app/integrations/opera_cloud/parser.py,
+com a função parse_res_detail(caminho_do_arquivo) e as dataclasses
+ReservaParseada, ComentarioParseado, TraceParseado e MembershipParseado.
+O parser lê o XML, percorre todos os G_GROUP_BY1 (não só o primeiro),
+e devolve uma tupla (lista de reservas, lista de erros) — uma reserva
+com campo obrigatório ausente vira uma entrada na lista de erros, sem
+interromper o processamento das demais. Nenhuma conversão de data
+acontece nesta fatia (check_in/check_out/arrival_check/departure_check
+ficam como string, crus — a comparação entre eles, decidida em
+2026-08-26, é responsabilidade da Fatia 3). RES_COMMENT_TYPE continua
+tratado como campo opaco. Testado manualmente (sem pytest, ainda não
+adotado no projeto) contra os dois fixtures: res_detail_sintetico.xml
+(40 reservas, 0 erros) e res_detail_sintetico_v2.xml (2 reservas, 0
+erros, ambas já com room_number preenchido). Nenhum código toca banco
+de dados nesta fatia — sem models, sem app.extensions.
+
+Próximo passo: Fatia 2 (upsert de Guest).
 
 ## O que já existe
 
