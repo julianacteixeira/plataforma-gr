@@ -32,14 +32,24 @@ Fatia 1 (parser puro do XML) CONCLUÍDA em 2026-09-03 (commit 233d8c8b):
 app/integrations/opera_cloud/parser.py, função parse_res_detail. Ver
 current-state.md para detalhes técnicos completos.
 
-PRÓXIMO PASSO CONCRETO: Fatia 2 — upsert de Guest, ainda não iniciada.
-Antes do código, é preciso decidir: como identificar se um Guest é novo
-ou já existente (chave opera_guest_id); o que fazer quando o FULL_NAME
-vem diferente para o mesmo opera_guest_id numa reimportação; e como
-isso se relaciona com a pendência já registrada em 2026-08-28 sobre
-correção de titularidade (GUEST_NAME_ID diferente numa reimportação da
-mesma reservation_code). Essas decisões de comportamento serão
-propostas em texto, para aprovação, antes de qualquer código de upsert.
+Fatia 2 (upsert de Guest) CONCLUÍDA em 2026-09-07 (commit 2ff1282):
+app/integrations/opera_cloud/guest_upsert.py, função upsert_guest. Ver
+current-state.md para detalhes técnicos completos. Decisão nova
+registrada no mesmo dia: extração automática de Guest.pmid a partir de
+MEMBERSHIP_CARD_NO (decision-log.md, "[2026-09-07] Extração automática
+de PMID").
+
+PRÓXIMO PASSO CONCRETO: Fatia 2b — criação de GuestBadge de origem
+all_tier, ainda não iniciada. Escopo: quando upsert_guest identificar
+nível A3 (Gold), A4 (Platinum), A5 (Diamond) ou A6 (Limitless), deve
+criar ou atualizar um GuestBadge com status "active" (decisão de
+2026-08-02, estendida em 2026-08-16 e 2026-08-24 para incluir A6).
+Pendências a fechar em texto antes do código: nome do arquivo/função;
+tratamento de downgrade (decisão de 2026-08-02 já diz "nunca rebaixa
+nem remove automaticamente" — confirmar se isso é suficiente); e como
+localizar a Category correspondente a cada nível (ALL Gold/Platinum/
+Diamond/Limitless) no banco, já que essas categorias não têm keyword
+nem opera_rate_code, só existem via seed.
 
 
 

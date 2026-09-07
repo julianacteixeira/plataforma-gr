@@ -36,7 +36,33 @@ adotado no projeto) contra os dois fixtures: res_detail_sintetico.xml
 erros, ambas já com room_number preenchido). Nenhum código toca banco
 de dados nesta fatia — sem models, sem app.extensions.
 
-Próximo passo: Fatia 2 (upsert de Guest).
+A Fatia 2 da Frente 3 (upsert de Guest) foi concluída em 2026-09-07
+(commit 2ff1282): novo módulo
+app/integrations/opera_cloud/guest_upsert.py, com a função
+upsert_guest(reserva). Identifica Guest existente por opera_guest_id;
+cria quando não existe. full_name é sempre atualizado a partir do
+Opera. all_member/all_card_number só são atualizados quando a reserva
+traz fidelidade A1-A6 (decisão de 2026-08-02, estendida para A6 em
+2026-08-16) — se a reserva não trouxer nenhuma, os valores existentes
+são preservados. Guest.pmid passa a ser preenchido automaticamente a
+partir de MEMBERSHIP_CARD_NO quando o cartão tiver exatamente 16
+caracteres (decisão de 2026-09-07, opera-field-reference.md), sem
+nunca sobrescrever um pmid já preenchido manualmente. A função só faz
+add()/flush(), nunca commit()/rollback() — isso fica para a
+orquestração (Fatia 5), seguindo a Opção B (uma transação por
+reserva). Criação de GuestBadge (origem all_tier) foi deliberadamente
+deixada fora desta fatia — vira uma fatia própria (2b), ainda não
+iniciada.
+
+Testado manualmente: idempotência confirmada (mesma reserva, duas
+chamadas, mesmo Guest.id); tipos "ID"/"G7" corretamente ignorados
+(fixture, reserva TESTE0007); extração de PMID confirmada com objeto
+ReservaParseada fabricado à mão (cartão "30810338788156PY" → pmid
+"8788156P"), já que o fixture sintético ainda não gera nenhum cenário
+com MEMBERSHIP_CARD_NO preenchido (pendência registrada, não
+bloqueante).
+
+Próximo passo: Fatia 2b (GuestBadge de origem all_tier).
 
 ## O que já existe
 
