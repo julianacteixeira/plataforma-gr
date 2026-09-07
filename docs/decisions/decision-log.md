@@ -1743,3 +1743,33 @@ de reserva.
   diretamente é mais adequado a um fato que se acumula aos poucos.
 
 **Status:** Aprovado.
+
+## [2026-09-07] Extração automática de PMID a partir de MEMBERSHIP_CARD_NO
+
+**Contexto:** Juliana identificou um padrão no MEMBERSHIP_CARD_NO do
+Opera que parece codificar o PMID do hóspede (ver
+opera-field-reference.md). Diferente do MEMBERSHIP_CARD_NO, que muda a
+cada troca de nível, o PMID é o identificador estável do membro ALL.
+
+**Decisão:**
+- Durante a importação (Fatia 2 do parser/upsert de Guest), o campo
+  `Guest.pmid` passa a ser preenchido automaticamente a partir de
+  `MEMBERSHIP_CARD_NO`, extraindo os caracteres 8 a 15 (1-indexado).
+- A extração só é aplicada quando `MEMBERSHIP_CARD_NO` tiver
+  EXATAMENTE 16 caracteres. Fora desse formato, o sistema não tenta
+  adivinhar — `pmid` permanece como estava.
+- Nunca sobrescreve um `pmid` já preenchido manualmente (mesmo
+  princípio de "nunca apagar informação sem rastro" já aplicado a
+  `all_member`/`all_card_number`).
+- Por ser baseado em amostra pequena (2 casos), o padrão fica
+  registrado como hipótese em opera-field-reference.md, não como fato
+  consolidado. Revisar se surgirem contra-exemplos.
+
+**Alternativas consideradas:**
+- Não usar o padrão até ter mais amostras — descartado porque o campo
+  `pmid` hoje não alimenta nenhuma lógica automática ativa (é só
+  referência), então o risco de um valor errado é baixo, e a trava de
+  formato (16 caracteres) já protege contra os casos mais óbvios de
+  divergência.
+
+**Status:** Aprovado.

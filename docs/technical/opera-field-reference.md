@@ -119,3 +119,16 @@ nomes exatos das tags de origem.
 | STC_APP | Skip The Clean by guest |
 | TBR | To Be Reviewed |
 | WAR | Warning Traces |
+
+## Campo MEMBERSHIP_CARD_NO — possível codificação do PMID
+
+Observado em 2026-09-07, em 2 amostras: MEMBERSHIP_CARD_NO (16
+caracteres) parece codificar o PMID do hóspede no ALL nos caracteres 8
+a 15 (1-indexado; `card[7:15]` em Python), com o nível de fidelidade
+representado no caractere 7. Confirmado que o PMID permanece o mesmo
+mesmo quando o hóspede muda de nível (e portanto de
+MEMBERSHIP_CARD_NO) — é o identificador estável do membro, diferente
+do número de cartão, que muda por nível.
+
+**Amostra insuficiente (apenas 2 casos) — tratar como hipótese, não
+como regra confirmada, até mais confirmação.**
