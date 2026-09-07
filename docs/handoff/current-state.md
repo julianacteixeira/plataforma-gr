@@ -62,7 +62,30 @@ ReservaParseada fabricado à mão (cartão "30810338788156PY" → pmid
 com MEMBERSHIP_CARD_NO preenchido (pendência registrada, não
 bloqueante).
 
-Próximo passo: Fatia 2b (GuestBadge de origem all_tier).
+A Fatia 2b da Frente 3 (GuestBadge de origem all_tier) foi concluída
+em 2026-09-07 (commit 86effb5): nova função
+_upsert_all_tier_badge(guest, nivel) em guest_upsert.py, chamada de
+dentro de upsert_guest. Existe no máximo um GuestBadge de origem
+all_tier por Guest — em upgrade de nível, o category_id do badge
+existente é trocado, em vez de criar um segundo badge; em downgrade
+ou nível igual, nada é alterado. A1/A2 nunca geram badge. Comparação
+de nível feita pelo dígito numérico do MEMBERSHIP_TYPE (3-6), nunca
+por suggestion_priority (Diamond e Limitless empatam nesse campo por
+decisão de 2026-08-24, o que invalidaria essa comparação).
+
+Decisão nova registrada no mesmo dia: reconciliação do comportamento
+de "upgrade" após a introdução de Category em 2026-08-03 ter abolido
+o campo label que a decisão original de 2026-08-02 previa atualizar
+(decision-log.md, "[2026-09-07] Reconciliação: comportamento de
+upgrade do badge all_tier").
+
+Testado manualmente: sequência Gold → Diamond → tentativa de
+"downgrade" para Gold no mesmo Guest, confirmando 1 badge sempre
+(nunca duplica) e categoria permanecendo ALL Diamond na terceira
+chamada (downgrade sem efeito, como decidido).
+
+Próximo passo: Fatia 3 (upsert de Reservation/ReservationNote/
+dept_traces).
 
 ## O que já existe
 

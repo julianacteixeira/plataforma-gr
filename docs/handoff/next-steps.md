@@ -39,17 +39,21 @@ registrada no mesmo dia: extração automática de Guest.pmid a partir de
 MEMBERSHIP_CARD_NO (decision-log.md, "[2026-09-07] Extração automática
 de PMID").
 
-PRÓXIMO PASSO CONCRETO: Fatia 2b — criação de GuestBadge de origem
-all_tier, ainda não iniciada. Escopo: quando upsert_guest identificar
-nível A3 (Gold), A4 (Platinum), A5 (Diamond) ou A6 (Limitless), deve
-criar ou atualizar um GuestBadge com status "active" (decisão de
-2026-08-02, estendida em 2026-08-16 e 2026-08-24 para incluir A6).
-Pendências a fechar em texto antes do código: nome do arquivo/função;
-tratamento de downgrade (decisão de 2026-08-02 já diz "nunca rebaixa
-nem remove automaticamente" — confirmar se isso é suficiente); e como
-localizar a Category correspondente a cada nível (ALL Gold/Platinum/
-Diamond/Limitless) no banco, já que essas categorias não têm keyword
-nem opera_rate_code, só existem via seed.
+Fatia 2b (GuestBadge de origem all_tier) CONCLUÍDA em 2026-09-07
+(commit 86effb5). Ver current-state.md para detalhes técnicos
+completos.
+
+PRÓXIMO PASSO CONCRETO: Fatia 3 — upsert de Reservation/
+ReservationNote/dept_traces, ainda não iniciada. Guest está
+completo (Fatias 2 e 2b): campos crus + badge de fidelidade. Fatia 3
+precisa decidir, antes do código: tratamento do caso já registrado em
+2026-08-28 (GUEST_NAME_ID diferente numa reimportação da mesma
+reservation_code — correção de titularidade); estratégia de
+delete-and-recreate de ReservationNote a cada importação (já decidida
+em 2026-08-26, decorrente da ausência de identificador estável por
+comentário); e a dupla verificação de datas TRUNC_BEGIN/END vs.
+ARRIVAL/DEPARTURE (decisão de 2026-08-26) — reserva com divergência
+vai para ImportErrorRecord em vez de ser importada.
 
 
 
