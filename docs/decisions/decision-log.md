@@ -1773,3 +1773,36 @@ cada troca de nível, o PMID é o identificador estável do membro ALL.
   divergência.
 
 **Status:** Aprovado.
+
+## [2026-09-07] Reconciliação: comportamento de upgrade do badge all_tier após a introdução de Category
+
+**Contexto:** A decisão de 2026-08-02 previa que, em upgrade de nível
+ALL, o sistema "atualiza o label do badge existente" — mas o campo
+`label` foi removido em 2026-08-03, substituído por `category_id`, sem
+que ninguém revisitasse explicitamente o que "upgrade" passaria a
+significar com quatro categorias separadas (ALL Gold/Platinum/
+Diamond/Limitless) em vez de um texto livre.
+
+**Decisão:**
+- Existe no máximo um GuestBadge de origem "all_tier" por Guest.
+- Em upgrade de nível (A3→A4→A5→A6), o category_id do badge existente
+  é trocado para a categoria do novo nível, em vez de criar um segundo
+  badge.
+- Em downgrade (nível apresentado numa reserva é menor que o já
+  registrado no badge), nada é alterado — reafirma a regra original de
+  2026-08-02 de nunca rebaixar nem remover automaticamente.
+- A1 e A2 continuam sem gerar badge (comportamento original
+  inalterado), mesmo marcando all_member=True.
+- Comparação de nível feita pelo dígito numérico do MEMBERSHIP_TYPE
+  (3,4,5,6), nunca pelo suggestion_priority da Category — Diamond e
+  Limitless têm o mesmo suggestion_priority (decisão de 2026-08-24), o
+  que tornaria essa comparação incorreta para decidir upgrade/downgrade.
+
+**Alternativas consideradas:**
+- Permitir múltiplos badges all_tier coexistindo (um por nível já
+  atingido) — rejeitado por gerar um perfil visualmente confuso (ex:
+  "Gold" e "Diamond" simultaneamente ativos) sem necessidade, já que o
+  objetivo do campo sempre foi refletir o nível atual do hóspede, não
+  seu histórico de níveis.
+
+**Status:** Aprovado.
