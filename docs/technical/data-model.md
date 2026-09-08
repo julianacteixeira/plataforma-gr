@@ -197,6 +197,7 @@ decision-log.md; documentada aqui como fato observado.
 | check_in | date | |
 | check_out | date | |
 | room_number | string | quarto "padrão" da reserva |
+| rate_code | string | opcional, RATE_CODE do Opera -- dado bruto por reserva, distinto de Category.opera_rate_code (regra de reconhecimento de categoria) |
 | reservation_code | string | único — chave usada para evitar importação duplicada |
 | source | string | valores em aberto (ex: manual, opera_cloud) |
 | dept_traces | text | opcional — traces internos do Opera (G_DEPT_ID), um parágrafo por trace, formato `[DEPT_ID - data] texto` (decisão de 2026-08-12) |

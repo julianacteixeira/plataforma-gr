@@ -185,3 +185,20 @@ python -c "from app import create_app; from app.models import [Model]; app = cre
 O sistema deve funcionar de forma completa sem essa integração. Quando for
 implementada, o código deve ficar isolado em um módulo próprio, sem
 dependências espalhadas pelo restante do sistema.
+
+## Regra: reconciliacao obrigatoria antes de fechar uma decisao
+
+Antes de registrar qualquer entrada nova em decision-log.md que
+envolva um campo, tabela ou conceito ja mencionado anteriormente,
+buscar esse termo em: decision-log.md, data-model.md,
+opera-field-reference.md, backlog.md, next-steps.md,
+current-state.md. Usar busca de SUBSTRING LITERAL (ex: Select-String
+no PowerShell, grep -F), nunca busca "por palavra" ou "inteligente"
+-- termos dentro de crases de markdown, negrito, ou colados a texto
+sem espaco podem nao ser encontrados por buscas que assumem limites
+de palavra, gerando falso negativo.
+
+Se a busca encontrar mencao desatualizada, a nova entrada corrige
+explicitamente ("revisa a decisao de X neste ponto") e os arquivos
+tecnicos afetados (especialmente data-model.md) sao atualizados no
+MESMO commit da decisao -- nunca deixados para depois.

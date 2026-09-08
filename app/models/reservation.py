@@ -19,6 +19,7 @@ class Reservation(db.Model):
     is_shared = db.Column(db.Boolean, nullable=False, default=False)
     adults = db.Column(db.Integer, nullable=True)
     children = db.Column(db.Integer, nullable=True)
+    rate_code = db.Column(db.String(20), nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )

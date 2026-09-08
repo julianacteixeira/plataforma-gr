@@ -1806,3 +1806,27 @@ Diamond/Limitless) em vez de um texto livre.
   seu histórico de níveis.
 
 **Status:** Aprovado.
+
+## [2026-09-07] Novo campo Reservation.rate_code
+
+**Contexto:** durante o planejamento da Fatia 3 (upsert de
+Reservation), identificou-se que RATE_CODE do Opera não tinha nenhum
+destino na tabela Reservation — só era usado indiretamente via
+Category.opera_rate_code, para sugestão automática de badge. Isso não
+atende a necessidade real de a equipe de GR visualizar o rate code de
+cada reserva individualmente nas telas futuras (referência visual: a
+tela "Lista de Chegadas" do Accor Customer Digital Card mostra o rate
+code por reserva).
+
+**Decisão:**
+- Novo campo Reservation.rate_code (String(20), nullable=True),
+  preenchido diretamente a partir de RATE_CODE a cada importação —
+  mesmo padrão de opera_status, is_shared, adults, children (sempre
+  sobrescrito pelo valor mais recente do Opera).
+- Este campo é independente de Category.opera_rate_code, que continua
+  existindo só para a lógica de sugestão de badge por tarifa (decisão
+  de 2026-08-12, item 12). Não há duplicação de responsabilidade: um
+  guarda o dado bruto da reserva, o outro é regra de negócio de
+  reconhecimento de categoria.
+
+**Status:** Aprovado.
