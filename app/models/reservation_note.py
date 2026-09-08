@@ -9,6 +9,7 @@ class ReservationNote(db.Model):
         db.Integer, db.ForeignKey("reservations.id"), nullable=False
     )
     comment_type = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(100), nullable=True)
     order_by = db.Column(db.Integer, nullable=False)
     text = db.Column(db.Text, nullable=False)
 

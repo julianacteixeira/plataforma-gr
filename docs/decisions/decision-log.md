@@ -1830,3 +1830,21 @@ code por reserva).
   reconhecimento de categoria.
 
 **Status:** Aprovado.
+
+## [2026-09-08] Implementação de ReservationNote.title (fecha pendência de 2026-08-28)
+
+**Contexto:** a decisão de 2026-08-28 ("Campo title em ReservationNote
+e correção sobre RES_COMMENT_TYPE") já havia aprovado a adição do
+campo `title`, mas deixou o tamanho em aberto e a migração planejada
+para quando a Frente 3 chegasse à implementação do model. Chegou.
+
+**Decisão:**
+- `ReservationNote.title` implementado como `String(100)`,
+  `nullable=True`, vindo de `RES_COMMENT_DESCRIPTION`. Tamanho
+  escolhido com folga em relação aos valores observados até agora em
+  opera-field-reference.md (GENERAL, IN HOUSE, RESERVATION).
+- Adicionado também `Reservation.guest` (relacionamento ORM,
+  `backref="reservations"`) — não é mudança de schema, só
+  conveniência de acesso em cima da FK `guest_id` já existente.
+
+**Status:** Aprovado.

@@ -224,6 +224,7 @@ nas telas futuras (decisão de 2026-08-12, item 3).
 | id | integer | PK |
 | reservation_id | integer | FK -> Reservation |
 | comment_type | string(20) | valor de RES_COMMENT_TYPE (ex: GEN, RES, CAS) |
+| title | string | opcional, RES_COMMENT_DESCRIPTION -- decisao de 2026-08-28, implementado em 2026-09-08 |
 | order_by | integer | ORDEM DE LEITURA do comentário dentro da reserva (1, 2, 3...), atribuída pelo parser conforme a sequência em que aparecem no XML — NÃO é o valor de RES_COMMENT_ORDER_BY do Opera, que é constante por tipo de comentário e não reflete a ordem real (decisão de 2026-08-26, "Estrutura confirmada do XML RES_DETAIL e correção de order_by") |
 | text | text | |
 

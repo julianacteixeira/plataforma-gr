@@ -30,6 +30,7 @@ class Reservation(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
+    guest = db.relationship("Guest", backref="reservations")
     reservation_notes = db.relationship("ReservationNote", backref="reservation")
 
     def __repr__(self):
