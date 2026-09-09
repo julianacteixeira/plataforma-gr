@@ -43,17 +43,26 @@ Fatia 2b (GuestBadge de origem all_tier) CONCLUÍDA em 2026-09-07
 (commit 86effb5). Ver current-state.md para detalhes técnicos
 completos.
 
-PRÓXIMO PASSO CONCRETO: Fatia 3 — upsert de Reservation/
-ReservationNote/dept_traces, ainda não iniciada. Guest está
-completo (Fatias 2 e 2b): campos crus + badge de fidelidade. Fatia 3
-precisa decidir, antes do código: tratamento do caso já registrado em
-2026-08-28 (GUEST_NAME_ID diferente numa reimportação da mesma
-reservation_code — correção de titularidade); estratégia de
-delete-and-recreate de ReservationNote a cada importação (já decidida
-em 2026-08-26, decorrente da ausência de identificador estável por
-comentário); e a dupla verificação de datas TRUNC_BEGIN/END vs.
-ARRIVAL/DEPARTURE (decisão de 2026-08-26) — reserva com divergência
-vai para ImportErrorRecord em vez de ser importada.
+Fatia 3 (upsert de Reservation/ReservationNote) CONCLUÍDA em 2026-09-09
+(commits 0d88e07, a2d914c). Ver current-state.md para detalhes
+técnicos completos. Decisão nova registrada no mesmo dia: contrato de
+retorno de upsert_reservation e preservação de notas de sistema
+(decision-log.md, "[2026-09-08] Upsert de Reservation: contrato de
+retorno e preservação de notas de sistema"), seguida de correção do
+cálculo de order_by da nota SISTEMA (decision-log.md, "[2026-09-08]
+Cálculo de order_by da nota SISTEMA considera histórico, não só a
+importação atual").
+
+PRÓXIMO PASSO CONCRETO: Fatia 4 — StayBadge via keyword. Import
+completo até aqui (Fatias 1-3): parser + upsert de Guest (com badge
+all_tier) + upsert de Reservation/ReservationNote. Fatia 4 precisa
+decidir, antes do código, como aplicar as regras já fechadas em
+2026-08-12 (roteamento dinâmico de badge por Category.scope, busca de
+palavra-chave ignorando acentos/caixa, formato de combinação "E" com
+"+", regra de "Atenção Especial" para termos genéricos) e em 2026-08-06
+(interação always_apply / manual_only / ranking normal de
+suggestion_priority) contra os comentários (ReservationNote) recém-
+gravados pela Fatia 3.
 
 
 
@@ -204,11 +213,6 @@ Ver detalhes em docs/handoff/current-state.md:
   implementada.
 - Definir a regra de cascata ao apagar um VipPlan (o que acontece com os
   VipItems ligados a ele). Nenhum ondelete foi definido nas FKs.
-- Desenhar, na Fatia 3 (upsert de Reservation), o tratamento para o caso
-  de GUEST_NAME_ID de uma reserva ja existente vir diferente numa
-  reimportacao (correcao de titularidade feita pela recepcao no ato do
-  check-in). Ver decision-log.md, entrada "[2026-08-28] Contagem de
-  stay_count por periodo de estadia".
 
 
 

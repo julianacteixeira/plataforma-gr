@@ -84,8 +84,48 @@ Testado manualmente: sequência Gold → Diamond → tentativa de
 (nunca duplica) e categoria permanecendo ALL Diamond na terceira
 chamada (downgrade sem efeito, como decidido).
 
-Próximo passo: Fatia 3 (upsert de Reservation/ReservationNote/
-dept_traces).
+A Fatia 3 da Frente 3 (upsert de Reservation/ReservationNote) foi concluída
+em 2026-09-09 (commits 0d88e07, a2d914c): novo módulo
+app/integrations/opera_cloud/reservation_upsert.py, função
+upsert_reservation(reserva). Chave de upsert: reservation_code. Datas
+lidas de TRUNC_BEGIN/TRUNC_END (fonte primária); divergência contra
+ARRIVAL/DEPARTURE impede a gravação e devolve mensagem de erro
+(decisão de 2026-08-26). Reserva sem opera_guest_id resolvido também
+vira erro (upsert_guest devolve None). Campos crus (is_shared, adults,
+children, room_number, opera_status, rate_code) sempre sobrescritos
+pelo valor mais recente do Opera; dept_traces recalculado por inteiro
+a cada importação.
+
+Correção de titularidade (GUEST_NAME_ID diferente numa reimportação da
+mesma reservation_code — pendência registrada em 2026-08-28) está
+resolvida: quando o guest_id resolvido diverge do já gravado na
+Reservation, o vínculo é atualizado e uma ReservationNote
+(comment_type="SISTEMA") registra a mudança de hóspede. Notas SISTEMA
+são preservadas no delete-and-recreate de ReservationNote (que
+continua valendo para as demais notas, decisão de 2026-08-26) — sem
+essa exclusão, o rastro de titularidade se perderia na reimportação
+seguinte. O order_by da nota SISTEMA considera o maior valor entre os
+comentários desta importação e as notas SISTEMA já existentes da
+mesma reserva (correção registrada em 2026-09-09, decision-log.md,
+"Cálculo de order_by da nota SISTEMA considera histórico"), garantindo
+ordem cronológica estável mesmo após múltiplas trocas de titularidade
+ao longo do tempo.
+
+upsert_reservation devolve tuple[Reservation | None, str | None]
+(diferente de upsert_guest, que devolve só Reservation | None) — a
+mensagem de erro, quando presente, é o texto que a orquestração
+(Fatia 5) vai gravar em ImportErrorRecord.error_message. A função só
+faz add()/flush(), nunca commit()/rollback() (Opção B, uma transação
+por reserva, decidida na orquestração).
+
+Testado manualmente contra os fixtures: importação completa de
+res_detail_sintetico.xml (39 sucesso / 1 falha esperada — TESTE0030,
+divergência proposital de datas). Reimportação com
+res_detail_sintetico_v2.xml, na mesma sessão: 2 sucesso / 0 falha.
+Cenário 23 (TESTE0039, só preenchimento de ROOM_NO) corretamente sem
+gerar nenhuma ReservationNote. Cenário 26 (TESTE0040, troca de
+titularidade) gerou nota SISTEMA com order_by=1 e texto correto
+registrando a mudança de hóspede.
 
 ## O que já existe
 
@@ -193,7 +233,11 @@ decision-log.md, as duas entradas de 2026-08-26.
 
 - Qualquer tela, rota ou template além da autenticação.
 - Qualquer protótipo no Figma Make.
-- A pasta app/integrations/ — a Frente 3 (parser + upsert) não começou.
+- A pasta app/integrations/ — Frente 3 em andamento: parser.py (Fatia 1),
+  guest_upsert.py (Fatia 2 e 2b), reservation_upsert.py (Fatia 3)
+  implementados e testados manualmente. Falta: StayBadge via keyword
+  (Fatia 4) e orquestração completa do import com ImportLog/ImportError
+  (Fatia 5+).
 - Exportação em XLSX.
 - Memorando: só o schema existe (models + migração c4572c5bb013). Nenhuma
   rota, formulário, lógica de geração, cálculo de agregação por setor +
