@@ -1848,3 +1848,62 @@ para quando a Frente 3 chegasse à implementação do model. Chegou.
   conveniência de acesso em cima da FK `guest_id` já existente.
 
 **Status:** Aprovado.
+
+## [2026-09-08] Upsert de Reservation: contrato de retorno e preservação de notas de sistema
+
+**Contexto:** implementação da Fatia 3 (upsert de Reservation/
+ReservationNote). Duas decisões pequenas, não cobertas por entradas
+anteriores, precisaram ser fechadas para o código funcionar de forma
+consistente com o resto do projeto.
+
+**Decisão:**
+- `upsert_reservation` devolve `tuple[Reservation | None, str | None]`
+  em vez de um `Reservation | None` isolado (padrão diferente do usado
+  em `upsert_guest`, Fatia 2). A mensagem de erro, quando presente, é
+  o texto que a orquestração (Fatia 5) grava em
+  `ImportErrorRecord.error_message` — necessário porque, diferente de
+  `upsert_guest` (um único motivo de falha possível), esta função tem
+  três motivos distintos (data não interpretável, TRUNC_BEGIN/END
+  divergente de ARRIVAL/DEPARTURE, hóspede sem opera_guest_id).
+- O delete-and-recreate de ReservationNote (decisão de 2026-08-26)
+  passa a EXCLUIR as notas de sistema (comment_type="SISTEMA",
+  introduzido nesta mesma entrada para a nota de mudança de
+  titularidade — ver decisão de 2026-08-28 sobre o cenário de share).
+  Sem essa exclusão, a nota de titularidade seria apagada na
+  reimportação seguinte, contrariando o propósito de servir como
+  rastro permanente.
+
+**Status:** Aprovado.
+
+## [2026-09-08] Cálculo de order_by da nota SISTEMA considera histórico, não só a importação atual
+
+**Contexto:** revisão, no mesmo dia, da implementação da decisão "Upsert
+de Reservation: contrato de retorno e preservação de notas de sistema".
+Aquela decisão fechou QUE notas SISTEMA são preservadas entre
+importações, mas não fechou COMO o order_by da nova nota SISTEMA deve
+ser calculado -- esse era um detalhe de implementação ainda em aberto.
+Esta entrada fecha esse detalhe; não contradiz nem reabre a decisão
+anterior.
+
+**Problema identificado:** a implementação original calculava o
+order_by da nova nota SISTEMA usando apenas o maior order_by entre os
+comentários trazidos pela importação corrente (reserva.comments). Como
+notas SISTEMA de importações anteriores não entram nesse cálculo, duas
+trocas de titularidade em datas diferentes podem gerar notas SISTEMA
+com o mesmo order_by, tornando a ordem de exibição entre elas
+imprevisível.
+
+**Decisão:**
+- O order_by da nova nota SISTEMA passa a ser: o maior valor entre (a)
+  o maior order_by dos comentários desta importação e (b) o maior
+  order_by das notas SISTEMA já existentes desta reserva -- e então
+  soma-se 1.
+- Isso garante order_by estritamente crescente entre notas SISTEMA da
+  mesma reserva ao longo do tempo, tornando `ORDER BY order_by ASC`
+  suficiente para exibição cronológica correta, sem depender de
+  created_at ou de qualquer outro campo.
+- Aplica-se apenas ao cálculo de order_by de notas SISTEMA; não altera
+  nenhuma outra regra já fechada sobre delete-and-recreate de
+  ReservationNote.
+
+**Status:** Aprovado.
