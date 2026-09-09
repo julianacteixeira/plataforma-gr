@@ -22,3 +22,5 @@ desktop.ini
 
 # Arquivos do Visual Studio (workspace local)
 .vs/
+
+instance/
