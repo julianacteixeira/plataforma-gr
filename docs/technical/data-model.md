@@ -204,14 +204,22 @@ decision-log.md; documentada aqui como fato observado.
 | confirmed_eta | string | opcional, formato HH:MM — ETA confirmado manualmente pela equipe, distinto do ETA do Opera Cloud (decisão de 2026-08-03) |
 | contact_status | string | default "pendente" — status de contato prévio com o hóspede (decisão de 2026-08-03) |
 | opera_status | string(10) | opcional — código cru de SHORT_RESV_STATUS do Opera, sem tradução; nulo em reservas não vindas do Opera. "CXL" = cancelada, "CKIN" = hóspede em check-in, demais valores = ativa (decisão de 2026-08-26) |
-| is_shared | boolean | default False — indica reserva de quarto compartilhado (IS_SHARED_YN do Opera). O agrupamento entre reservas irmãs é calculado em consulta, não persistido (decisão de 2026-08-26) |
-| adults | integer | opcional — pode vir 0 em reservas de share, onde a ocupação é declarada na reserva âncora do grupo (decisão de 2026-08-26) |
-| children | integer | opcional — mesma observação de `adults` (decisão de 2026-08-26) |
+| is_shared | boolean | default False — indica se a reserva tem ao menos um "share" (reserva de outro hóspede dividindo o mesmo quarto), a partir de IS_SHARED_YN do Opera. O vínculo entre as reservas de um mesmo quarto ("roommates") é calculado em consulta, não persistido, usando regra híbrida de sobreposição de datas (decisão de 2026-08-26, terminologia e regra corrigidas em 2026-09-11 — ver decision-log) |
+| adults | integer | opcional — pode vir 0 quando a ocupação está declarada em outra reserva do mesmo vínculo de roommates (decisão de 2026-08-26, terminologia atualizada em 2026-09-11) |
+| children | integer | opcional — mesma observação de `adults` |
 | created_at | timestamp | nullable no código; padronização para nullable=False pendente (ver current-state.md) |
 | updated_at | timestamp | nullable=False, atualizado automaticamente via onupdate (decisão de 2026-08-26) |
 
 Nota: o campo `notes` (texto único com todos os comentários) foi removido e
 substituído pela tabela `ReservationNote` (decisão de 2026-08-12, item 3).
+
+Nota sobre terminologia share/roommates: "share" refere-se
+especificamente à reserva do acompanhante (não-titular) dentro de um
+vínculo de quarto; "roommates" é o termo para o vínculo/conjunto de
+reservas que dividem o mesmo quarto. Ver decision-log.md, entrada
+"[2026-09-11] Correção: terminologia share/roommates e regra de
+vínculo de quarto", para a regra híbrida de sobreposição de datas
+usada no cálculo do vínculo.
 
 ## ReservationNote (comentário da reserva)
 

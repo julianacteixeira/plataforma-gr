@@ -1907,3 +1907,102 @@ imprevisível.
   ReservationNote.
 
 **Status:** Aprovado.
+
+## [2026-09-11] Correção: terminologia share/roommates e regra de vínculo de quarto
+
+**Contexto:** revisão do mecanismo de vínculo entre reservas que dividem
+o mesmo quarto, descrito originalmente na decisão de 2026-08-26 ("Share
+de quarto, status da reserva e campos novos em Reservation"). A revisão
+partiu de um arquivo RES_DETAIL real (766 reservas, janela de 3 dias) e
+encontrou dois problemas na regra original: ambiguidade de terminologia
+e um defeito na lógica de sobreposição de datas.
+
+**Correção de terminologia:**
+- "Share" passa a significar exclusivamente a reserva do acompanhante
+  (não-titular) dentro de um vínculo de quarto — não mais o vínculo
+  inteiro.
+- "Roommates" é o termo novo para o vínculo/conjunto de reservas que
+  dividem o mesmo quarto (o que a decisão de 2026-08-26 chamava de
+  "agrupamento derivado" ou "vínculo entre reservas que dividem
+  quarto"). Termo em inglês, mesmo padrão já usado para "share" —
+  código em inglês, interface em português (decisão de 2026-07-13).
+
+**Correção técnica na regra de sobreposição de datas:**
+A decisão de 2026-08-26 definia sobreposição sem exigir datas iguais,
+mas não tratava o caso de reservas de "0 diária" (TRUNC_BEGIN =
+TRUNC_END, confirmadas presentes no dado real, com status GRD/NON).
+Testes mostraram que:
+- Comparação ESTRITA (a.begin < b.end E b.begin < a.end) deixa de
+  linkar corretamente reservas de 0 diária com a reserva que de fato
+  divide o quarto naquele dia.
+- Comparação INCLUSIVA (a.begin <= b.end E b.begin <= a.end) aplicada
+  de forma geral funde indevidamente duas duplas de roommates
+  DIFERENTES e sem relação, quando uma sai do quarto no mesmo dia em
+  que a outra entra (turnover normal de quarto) — produzindo vínculos
+  falsos de 4 pessoas que não existem (confirmado: SHARE_NAMES nunca
+  lista mais de 2 nomes na amostra, ou seja, o roommates real nunca
+  passa de trio).
+
+**Decisão:** a comparação de sobreposição usa regra híbrida:
+- INCLUSIVA (<=) quando PELO MENOS UMA das duas reservas comparadas
+  tiver TRUNC_BEGIN = TRUNC_END (reserva de 0 diária).
+- ESTRITA (<) em todos os demais casos (duas reservas de duração
+  normal, 1+ diária).
+Validado contra o arquivo real: 267 vínculos encontrados, tamanhos
+apenas 2 (par) e 3 (trio) — nenhum falso vínculo de 4. Zero vínculos
+ativos com adults=0 em todas as reservas do vínculo (as únicas 3
+ocorrências restantes são reservas canceladas, isoladas, sem parceira
+ativa — não um cenário de vipagem real a tratar).
+
+**SHARE_NAMES como sinal de validação transiente — NÃO reabre a decisão
+de não importar o campo:** a decisão de 2026-08-26 já determinou que
+SHARE_NAMES não é importado nem persistido, por ser dado pessoal de
+terceiro (princípio de minimização de dado, LGPD). Esta entrada NÃO
+reverte isso. O que se propõe é uso estritamente transiente, em
+memória, durante o próprio cálculo do vínculo no momento da
+importação: comparar a contagem de nomes citados em SHARE_NAMES
+(tamanho do vínculo esperado - 1) contra o tamanho do vínculo
+calculado por quarto+data, como checagem de consistência. Nenhum nome,
+de SHARE_NAMES ou de qualquer campo relacionado, é gravado no banco por
+conta desta checagem — apenas um eventual sinalizador de inconsistência
+(ex: "vínculo de N reservas, mas SHARE_NAMES sugere N+1" ou similar),
+sem texto de nome algum, poderia ser persistido, se a equipe decidir
+implementar esse alerta.
+Motivo para NÃO usar como mecanismo primário de vínculo (mesmo que
+fosse permitido persistir): validado contra o arquivo real que a
+correspondência textual entre SHARE_NAMES e FULL_NAME_NO_SHR_IND tem
+pelo menos duas fontes de inconsistência de formatação conhecidas
+(espaçamento após vírgula; sufixo de tratamento como ",Mr." presente
+em um campo e ausente no outro), reduzindo a taxa de correspondência
+exata a ~75% mesmo após normalização de acentos/caixa/espaços —
+insuficiente para vínculo automático confiável.
+
+**Esclarecimento sobre exibição na interface (evita leitura equivocada
+futura):** não importar/persistir o texto de SHARE_NAMES NÃO impede a
+interface de mostrar, para cada reserva, com quem ela divide o quarto.
+Essa exibição é obtida calculando o vínculo de roommates (quarto+data,
+regra híbrida acima) e exibindo o Guest.full_name já importado
+normalmente de cada reserva do mesmo vínculo — nunca lendo o campo
+SHARE_NAMES em si. Ver pendência já registrada em 2026-08-26 sobre
+agrupamento visual de reservas-irmãs na fase de telas.
+
+**Simplificação identificada (não bloqueante):** FULL_NAME_NO_SHR_IND é
+o mesmo valor de FULL_NAME já sem o prefixo "*" que o parser hoje
+remove manualmente (decisão de 2026-08-26) — "NO_SHR_IND" significa
+"no share indicator", ou seja, o próprio Opera já entrega a versão sem
+o indicador de share. Usar FULL_NAME_NO_SHR_IND diretamente eliminaria
+essa manipulação de string no parser. Não implementado nesta entrada —
+registrado como oportunidade para quando o parser for revisitado.
+
+**Pendência nova identificada, fora do escopo desta entrada:** não
+existe decisão registrada sobre como nomes de hóspede devem ser
+formatados na interface (ex: "Nome Sobrenome" em vez do formato bruto
+"Sobrenome,Nome" do Opera, remoção de prefixos de tratamento como Mr.,
+Mrs., Dr.). Confirmado por busca no repositório: nenhuma menção a esse
+tema em docs/design/ ou em qualquer outro lugar. Campos como
+ReservationNote.text (nota SISTEMA de troca de titularidade, Fatia 3)
+já gravam o nome no formato bruto do Opera, de forma permanente — uma
+futura decisão de formatação de exibição não afetaria retroativamente
+texto já gravado. Fica como pendência para a fase de telas.
+
+**Status:** Aprovado.
