@@ -2006,3 +2006,130 @@ futura decisão de formatação de exibição não afetaria retroativamente
 texto já gravado. Fica como pendência para a fase de telas.
 
 **Status:** Aprovado.
+
+## [2026-09-12] Fatia 4 — StayBadge via keyword: desenho técnico unificado
+
+**Contexto:** fecha o desenho completo da Fatia 4 (criação de StayBadge a
+partir de palavras-chave nos comentários da reserva), unificando decisões
+que estavam dispersas em três entradas anteriores (2026-08-06, 2026-08-12,
+2026-09-11) e fechando cinco pontos que nenhuma delas cobria. Nenhum código
+da Fatia 4 existia em disco no momento desta entrada. Reconciliação por
+busca literal no repositório confirmou 0 ocorrências prévias dos termos
+`matched_keyword`, `matched_note_type`, `origin_missing` e
+`stay_badge_upsert`.
+
+**Decisões:**
+
+1. **Localização e momento de execução.** A lógica roda em módulo separado,
+   `app/integrations/opera_cloud/stay_badge_upsert.py`, chamado pela
+   orquestração DEPOIS de `upsert_reservation` retornar sucesso — nunca
+   dentro de `upsert_reservation`. Segue a ordem de processamento já
+   fechada (Guest → Reservation → ReservationNote → dept_traces → badges),
+   o que garante que todas as reservas do arquivo já estão no banco quando
+   o cálculo de vínculo roda.
+
+2. **Escopo — ranking de `suggestion_priority` fica FORA desta fatia.** A
+   decisão de 2026-08-06 (interação always_apply/manual_only/ranking)
+   trata de qual template de item é sugerido ao montar um VipPlan, não de
+   qual badge criar. São momentos distintos: a Fatia 4 pode criar vários
+   StayBadge "suggested" para a mesma reserva, um por categoria detectada;
+   a escolha de qual template vence é calculada ao vivo na tela de
+   planejamento, consumindo os badges já gravados. Congelar o ranking no
+   momento da importação produziria dado desatualizado assim que um badge
+   fosse aceito manualmente ou um badge manual fosse criado. Fica como
+   pendência explícita para a fatia futura de sugestão de itens no
+   VipPlan.
+
+3. **Busca de keyword — escopo por nota individual.** A busca percorre
+   `ReservationNote` uma a uma, não o texto concatenado da reserva. A
+   regra de combinação "E" (`termo1+termo2`, decisão de 2026-08-12 item
+   10) exige que ambos os termos apareçam na MESMA nota. Mantidas sem
+   alteração: roteamento dinâmico por `Category.scope` (item 7), busca
+   ignorando acentos e caixa (item 9).
+
+4. **Tipos de comentário — sem filtro na detecção.** A busca varre todos
+   os `comment_type`, incluindo GEN (gerados automaticamente pelo Opera).
+   A regra de exibição de 2026-08-12 item 3 (esconder GEN por padrão) é
+   decisão de interface e não deve enviesar a detecção de badge.
+   Consequência registrada para a fase de telas: quando um badge for
+   originado por uma nota de tipo normalmente oculto, a interface deve
+   tornar essa nota visível, para que a origem da sugestão não fique
+   inexplicável ao usuário.
+
+5. **Regra de descarte de "Atenção Especial" — por nota, não por
+   reserva.** Implementa a ressalva da decisão de 2026-08-06 (termos
+   genéricos "vip"/"mimo" só geram Atenção Especial quando não
+   acompanhados de keyword mais específica). O descarte é avaliado nota a
+   nota: se uma nota casa com Atenção Especial E com outra categoria,
+   descarta-se Atenção Especial para aquela nota. Outra nota da mesma
+   reserva que case apenas com "vip"/"mimo" ainda gera Atenção Especial
+   normalmente. Avaliar pela reserva inteira tornaria essa segunda nota
+   silenciosamente invisível, contrariando o propósito da categoria
+   (sinalizar revisão humana de algo escrito deliberadamente).
+
+6. **Regra de titular dentro do vínculo de roommates.** O StayBadge vai
+   para a reserva com `adults > 0`, se houver exatamente uma dentro do
+   vínculo. Em qualquer outro caso (nenhuma, ou mais de uma com
+   `adults > 0`), vai para a reserva onde a keyword foi encontrada.
+   Aplica-se a todas as categorias sem exceção, incluindo Atenção
+   Especial.
+
+7. **Reservas canceladas ficam fora do cálculo do vínculo de
+   roommates.** Reservas com `opera_status = "CXL"` não entram no
+   conjunto avaliado pela regra híbrida de sobreposição (decisão de
+   2026-09-11). Motivo: incluí-las distorceria a contagem de "exatamente
+   uma com adults > 0" — uma reserva cancelada de titular faria a regra
+   apontar para alguém que não está mais hospedado.
+
+8. **Regra de duplicidade em reimportação.** Antes de criar um StayBadge
+   novo para a combinação (`reservation_id`, `category_id`), verifica-se
+   se já existe QUALQUER registro com essa combinação, em qualquer status
+   (suggested, active ou rejected). Se existir, não cria de novo,
+   independentemente do status.
+
+9. **Campos novos em `StayBadge` — rastro de origem.**
+   - `matched_keyword` (String, nullable): o termo de `CategoryKeyword`
+     que disparou a sugestão.
+   - `matched_note_type` (String, nullable): o `comment_type` da nota
+     onde o termo foi encontrado (ex: "GEN", "RES", "CAS").
+   - Ambos nulos em badges de origem manual ou rate_code.
+   - Decisão explícita de NÃO usar FK para a nota de origem:
+     `ReservationNote` é apagada e recriada a cada importação (decisão de
+     2026-08-26), logo os `id` das notas não são estáveis entre
+     importações. Uma FK apontaria, na importação seguinte, para uma
+     linha inexistente ou para outra nota. Guardar o termo e o tipo como
+     texto é imune a esse ciclo e não exige lógica de reapontamento.
+   - Uso duplo destes campos: auditoria (saber por que a sugestão surgiu)
+     e, na fase de telas, destaque visual da nota de origem ao expandir a
+     reserva — a tela localiza a nota buscando `matched_keyword` no texto
+     das notas em tempo de exibição. Limitação aceita: se duas notas
+     contiverem o mesmo termo, ambas serão destacadas.
+
+10. **Campo novo `origin_missing`** (Boolean, default False) — badge
+    órfão. Quando uma reimportação não reencontra, em nenhuma nota da
+    reserva, a `matched_keyword` que originou um badge, o campo passa a
+    True e o badge é sinalizado na interface como tendo perdido sua
+    origem. O badge NUNCA é apagado. Escopo: aplica-se exclusivamente a
+    badges com `status = "suggested"` E `source = "keyword_suggestion"`.
+    Badges active (já aceitos), rejected (já recusados) ou de origem
+    manual/rate_code não são avaliados nem alterados — a nota deixou de
+    ser a origem relevante deles. Se a keyword voltar a ser encontrada
+    numa importação posterior, o campo retorna a False.
+
+**Alternativas consideradas:**
+- Embutir o ranking de `suggestion_priority` no import — rejeitado por
+  congelar, no momento errado, um cálculo que precisa refletir o estado
+  atual dos badges.
+- Buscar keywords no texto concatenado de todas as notas da reserva —
+  rejeitado por tornar a regra de combinação "+" permissiva demais (dois
+  termos em notas não relacionadas passariam a casar).
+- `matched_note_id` como FK — rejeitado pelo delete-and-recreate de
+  ReservationNote.
+- Apagar badges órfãos na reimportação — rejeitado por contrariar o
+  princípio de nunca apagar sem rastro e por apagar casos legítimos (nota
+  reescrita com outra palavra, evento ainda válido).
+- Não sinalizar badges órfãos — rejeitado; é exatamente o tipo de dado
+  errado silencioso que a REGRA NOVA 2 de 2026-08-26 determina
+  transformar em sinal visível.
+
+**Status:** Aprovado.
