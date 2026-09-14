@@ -2133,3 +2133,24 @@ busca literal no repositório confirmou 0 ocorrências prévias dos termos
   transformar em sinal visível.
 
 **Status:** Aprovado.
+
+## [2026-09-14] Normalização de texto na busca de keyword (Fatia 4a)
+
+**Contexto:** decisão de 2026-08-12 (item 9) já fechou que a busca de
+keyword deve ignorar acento e caixa, mas não especificou o mecanismo.
+Levantamento em 2026-09-14 confirmou: nenhuma função de normalização
+reaproveitável existe no projeto hoje; requirements.txt não contém
+unidecode; única ocorrência prévia é um .lower() solto em
+app/seeds/category_keywords.py, sem remoção de acento.
+
+**Decisão:** normalização usa unicodedata.normalize("NFKD", texto) da
+biblioteca padrão do Python, seguido de remoção dos caracteres de marca
+diacrítica (unicodedata.combining(c)), e .lower(). Aplicada tanto ao
+texto da nota quanto ao texto da keyword antes da comparação. Nenhuma
+dependência nova adicionada ao requirements.txt.
+
+**Alternativa considerada:** biblioteca unidecode — rejeitada por exigir
+dependência nova para cobrir casos (alfabetos não-latinos) que não
+ocorrem no domínio do projeto (notas em português).
+
+**Status:** Aprovado.
