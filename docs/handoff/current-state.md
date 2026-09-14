@@ -1,6 +1,6 @@
 # Estado Atual do Projeto — Plataforma de Guest Relations
 
-**Última atualização:** 2026-08-28
+**Última atualização:** 2026-09-14
 
 ## Fase atual
 
@@ -127,6 +127,14 @@ gerar nenhuma ReservationNote. Cenário 26 (TESTE0040, troca de
 titularidade) gerou nota SISTEMA com order_by=1 e texto correto
 registrando a mudança de hóspede.
 
+O desenho técnico da Fatia 4 (StayBadge via keyword) foi fechado em
+2026-09-12 (decision-log.md, "[2026-09-12] Fatia 4 — StayBadge via
+keyword: desenho técnico unificado"). A migração de schema
+correspondente (3 colunas novas em StayBadge: matched_keyword,
+matched_note_type, origin_missing) foi aplicada em 2026-09-14 (commit
+d38ff75). A função stay_badge_upsert em si ainda não foi escrita —
+por enquanto só o schema existe.
+
 ## O que já existe
 
 ### Documentação
@@ -235,9 +243,11 @@ decision-log.md, as duas entradas de 2026-08-26.
 - Qualquer protótipo no Figma Make.
 - A pasta app/integrations/ — Frente 3 em andamento: parser.py (Fatia 1),
   guest_upsert.py (Fatia 2 e 2b), reservation_upsert.py (Fatia 3)
-  implementados e testados manualmente. Falta: StayBadge via keyword
-  (Fatia 4) e orquestração completa do import com ImportLog/ImportError
-  (Fatia 5+).
+  implementados e testados manualmente. Fatia 4 (StayBadge via keyword):
+  desenho fechado e schema aplicado (colunas matched_keyword,
+  matched_note_type, origin_missing em StayBadge, commit d38ff75) —
+  falta escrever a função stay_badge_upsert em si. Falta também a
+  orquestração completa do import com ImportLog/ImportError (Fatia 5+).
 - Exportação em XLSX.
 - Memorando: só o schema existe (models + migração c4572c5bb013). Nenhuma
   rota, formulário, lógica de geração, cálculo de agregação por setor +

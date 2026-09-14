@@ -64,6 +64,13 @@ palavra-chave ignorando acentos/caixa, formato de combinação "E" com
 suggestion_priority) contra os comentários (ReservationNote) recém-
 gravados pela Fatia 3.
 
+O desenho técnico da Fatia 4 foi fechado em 2026-09-12 (decision-log.md,
+"[2026-09-12] Fatia 4 — StayBadge via keyword: desenho técnico
+unificado"), e a migração de schema correspondente já foi aplicada em
+2026-09-14 (commit d38ff75). PRÓXIMO PASSO CONCRETO agora: escrever a
+função stay_badge_upsert em
+app/integrations/opera_cloud/stay_badge_upsert.py.
+
 
 
 \## Category: revisão concluída
