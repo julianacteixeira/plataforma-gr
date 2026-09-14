@@ -15,6 +15,9 @@ class StayBadge(db.Model):
     created_by_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=True
     )
+    matched_keyword = db.Column(db.String, nullable=True)
+    matched_note_type = db.Column(db.String, nullable=True)
+    origin_missing = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
