@@ -2256,3 +2256,31 @@ leitura em 2026-09-14):**
   Juliana definiu que bodas se enquadra dentro de "Romântico".
 
 **Status:** Aprovado.
+
+## [2026-09-14] Casamento de keyword exige borda de palavra, não substring
+
+**Contexto:** entrada "[2026-09-14] Divisão de 'Lua de Mel/Romântico'
+em Noivos, Lua de Mel e Romântico" citou esta correção como pendência,
+sem fechá-la como decisão própria. Origem do problema: teste manual da
+Fatia 4a (detect_categories_in_notes) revelou a keyword "niver" batendo
+como substring dentro de "aniversário" (a-NIVER-sário) — mesma nota
+levou à descoberta de um risco maior: a keyword "vip" (categoria
+Atenção Especial) bate, pela mesma lógica de substring, dentro da
+palavra "vipagem" — termo interno usado no dia a dia da equipe de Guest
+Relations para descrever a própria rotina de trabalho, tornando esse
+falso positivo provável em notas reais, não só um caso de borda.
+
+**Decisão:** o casamento de keyword passa a exigir borda de palavra
+(regex \b no início e no fim de cada termo, após normalização), em vez
+de correspondência por substring simples. Aplica-se a cada termo
+individual dentro da regra de combinação "+" (decisão de 2026-08-12,
+item 10) também — cada parte precisa bater como palavra inteira, não
+só a keyword combinada como um todo. Implementado em
+app/integrations/opera_cloud/keyword_detection.py, função
+_keyword_matches, via re.search(r"\b" + re.escape(parte) + r"\b", ...).
+
+**Alternativa considerada:** manter substring simples — rejeitada por
+risco de falso positivo silencioso, agravado pelo caso concreto
+"vip" dentro de "vipagem" (termo interno de uso corriqueiro nas notas).
+
+**Status:** Aprovado.

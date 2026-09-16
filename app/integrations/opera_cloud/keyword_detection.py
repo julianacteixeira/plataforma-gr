@@ -6,6 +6,7 @@ mas não grava nada no banco. Não decide para qual reserva o badge vai
 (isso é a Fatia 4b) e não cria StayBadge (isso é a Fatia 4c).
 """
 
+import re
 import unicodedata
 
 from app.extensions import db
@@ -33,10 +34,20 @@ def _normalize(text):
 def _keyword_matches(normalized_note_text, normalized_keyword):
     """Aplica a regra de combinação '+': todos os termos separados por
     '+' precisam aparecer no texto da nota para a keyword bater
-    (decisão de 2026-08-12, item 10)."""
+    (decisão de 2026-08-12, item 10).
+
+    Cada termo precisa bater como PALAVRA INTEIRA (borda de palavra,
+    \\b), não como substring solta — decisão de 2026-09-14 ("Casamento
+    de keyword exige borda de palavra, não substring"). Sem isso, "vip"
+    bateria dentro de "vipagem", e "niver" bateria dentro de
+    "aniversário".
+    """
     parts = [part.strip() for part in normalized_keyword.split("+")]
     parts = [part for part in parts if part]
-    return all(part in normalized_note_text for part in parts)
+    return all(
+        re.search(r"\b" + re.escape(part) + r"\b", normalized_note_text)
+        for part in parts
+    )
 
 
 def detect_categories_in_notes(notes):
