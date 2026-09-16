@@ -2154,3 +2154,105 @@ dependência nova para cobrir casos (alfabetos não-latinos) que não
 ocorrem no domínio do projeto (notas em português).
 
 **Status:** Aprovado.
+
+## [2026-09-14] Esclarecimento: mapeamento de keyword de "lua de mel"/"romântico" segue a versão de 2026-08-12
+
+**Contexto:** ao investigar a divisão da categoria "Lua de Mel/Romântico"
+(ver entrada seguinte, mesma data), encontrada divergência entre duas
+entradas anteriores do decision-log:
+- [2026-08-06]: determinava que "lua de mel" e "romântico" apontassem
+  para "Comemorações", mantendo "Lua de Mel/Romântico" fora da detecção
+  automática por keyword (só uso manual, suggestion_priority=12).
+- [2026-08-12] ("Mapeamento de campos e regras da importação Opera
+  Cloud"): mapeia as mesmas duas keywords diretamente para a categoria
+  "Lua de Mel/Romântico", sem mencionar estar revisando a entrada
+  anterior.
+
+Nenhuma das duas indicava explicitamente substituir a outra. O código
+implementado em app/seeds/category_keywords.py segue a versão de
+2026-08-12.
+
+**Decisão:** a entrada de 2026-08-12 é reconhecida como a versão
+vigente — mais recente e parte de um mapeamento mais completo e
+deliberado, não um esquecimento. A entrada de 2026-08-06 sobre este
+ponto específico fica marcada como superada. Nenhuma mudança de código
+é necessária: o comportamento já implementado está correto.
+
+**Status:** Aprovado (correção de documentação, sem impacto em código).
+
+## [2026-09-14] Divisão de "Lua de Mel/Romântico" em Noivos, Lua de Mel e Romântico
+
+**Contexto:** teste da Fatia 4a revelou nota "Aniversário de casamento"
+gerando duas detecções paralelas (Aniversário + Casamento), sem
+categoria própria para o conceito. Juliana esclareceu a distinção real
+de Guest Relations: grupo de casamento hospedado para a cerimônia em
+outro lugar (vipagem para os noivos) é caso operacionalmente diferente
+de casal em lua de mel, que por sua vez é diferente de qualquer
+comemoração romântica em casal (incluindo bodas/aniversário de
+casamento). Confirmado por consulta somente leitura (2026-09-14):
+nenhum StayBadge aponta hoje para category_id=20, então a divisão não
+afeta nenhum badge já gravado. Reconciliação por busca literal
+confirmou: nenhuma ocorrência prévia de "noivos", "noiva", "casório" ou
+"núpcias" em docs/ ou app/; toda ocorrência de "Lua de Mel" e
+"Romântico" já mapeada nesta entrada.
+
+**Decisão — categorias:**
+1. Categoria id 25 ("Casamento") renomeada para "Noivos" — mesmo id.
+   Escopo: grupo hospedado para a cerimônia de casamento realizada em
+   outro local, vipagem para os noivos.
+2. Categoria id 20 ("Lua de Mel/Romântico") renomeada para "Lua de Mel"
+   — mesmo id. Escopo: casal em viagem/comemoração de lua de mel, logo
+   após o casamento.
+3. Nova categoria "Romântico" criada. Escopo: qualquer comemoração
+   romântica em casal, envolvendo ou não bodas/aniversário de
+   casamento.
+4. As três (Noivos, Lua de Mel, Romântico), junto com Aniversário
+   (id 12, inalterada), recebem suggestion_priority = 4 — empate
+   proposital entre as quatro, já que o uso do ranking é escopo de
+   fatia futura (decisão de 2026-09-12, item 2). Antes: Noivos tinha
+   17, Lua de Mel tinha 12.
+5. scope="stay", group_number=4, always_apply=False, manual_only=False
+   para as três — sem mudança estrutural, só nome, keywords e
+   prioridade.
+
+**Decisão — keywords:**
+- Noivos: mantém "noivos" (renomeada a partir de "casamento", id 88 —
+  ver mecânica abaixo). Novas: "noivo", "noiva", "casório".
+- Lua de Mel: mantém "lua de mel" (id 89). Novas: "núpcias",
+  "recém-casados".
+- Romântico: "romântico" (id 90) REALOCADO da categoria 20 para a
+  categoria nova. Novas: "bodas", "anos de casados", "anos de casado",
+  e a keyword combinada "aniversário+casamento" (regra de combinação
+  "+", 2026-08-12) — cobre o texto comum "aniversário de casamento"
+  sem confundir com aniversário de nascimento nem com a cerimônia de
+  casamento em si.
+- Nota de pesquisa: nomes específicos de bodas ("bodas de prata",
+  "bodas de ouro" etc.) não precisam de keyword própria — todos seguem
+  o padrão "bodas de [material]", já cobertos pela keyword "bodas"
+  isolada (uma vez corrigida a correspondência por borda de palavra,
+  ver entrada pendente sobre o falso positivo "niver"/"aniversário").
+
+**Mecânica de aplicação (ambos os seeds têm limitações confirmadas por
+leitura em 2026-09-14):**
+- app/seeds/categories.py faz upsert por `name` — renomear no
+  dicionário CATEGORIES criaria categoria duplicada em vez de renomear.
+  Correção: passo explícito de renomeação por id/nome-antigo, executado
+  antes do loop padrão.
+- app/seeds/category_keywords.py faz upsert por `category_id + keyword`
+  combinados, e NUNCA atualiza ou desativa linha existente — só insere
+  o que falta. Correções necessárias, explícitas:
+  - reatribuir category_id da keyword "romântico" (id 90) da categoria
+    20 para a categoria nova "Romântico", ANTES do loop padrão (senão o
+    loop cria uma segunda linha "romântico" duplicada apontando para a
+    categoria nova, deixando a antiga órfã sob "Lua de Mel").
+  - desativar (active=False) a keyword "casamento" (id 88, categoria
+    Noivos) — nunca apagar, mantém rastreabilidade.
+
+**Alternativas consideradas:**
+- Manter categoria única, resolver só com keyword combinada — rejeitada
+  porque a distinção operacional (tipo de vipagem) é real, não é só
+  rótulo.
+- Criar quarta categoria "Bodas" separada de "Romântico" — rejeitada:
+  Juliana definiu que bodas se enquadra dentro de "Romântico".
+
+**Status:** Aprovado.
