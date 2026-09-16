@@ -43,8 +43,12 @@ CATEGORY_KEYWORDS = {
     ],
     "Pax Querido": ["pax+querido", "pax+querida", "pax+amor"],
     "Aniversário": ["aniversário", "niver"],
-    "Casamento": ["casamento"],
-    "Lua de Mel/Romântico": ["lua de mel", "romântico"],
+    "Noivos": ["noivos", "noivo", "noiva", "casório"],
+    "Lua de Mel": ["lua de mel", "núpcias", "recém-casados"],
+    "Romântico": [
+        "romântico", "bodas", "anos de casados", "anos de casado",
+        "aniversário+casamento",
+    ],
     "Voucher Novos Colaboradores": ["voucher novos colaboradores"],
     "Atenção Especial": ["vip", "mimo"],
     "Comemorações": ["comemoração", "celebração", "formatura", "aposentadoria"],
@@ -67,14 +71,49 @@ CATEGORY_KEYWORDS = {
 }
 
 
+def _apply_corrections():
+    """Corrige dados de keywords vindos da divisão de categoria
+    (decision-log.md, 2026-09-14, "Divisão de 'Lua de Mel/Romântico'
+    em Noivos, Lua de Mel e Romântico"). O loop padrão de run() só
+    insere combinações novas — nunca reatribui nem desativa uma
+    CategoryKeyword existente, então essas duas correções precisam ser
+    explícitas.
+
+    Depende de "Romântico" já existir como categoria (seed de
+    categorias deve rodar antes deste). Idempotente: cada correção
+    verifica o estado atual antes de agir.
+    """
+    lua_de_mel = Category.query.filter_by(name="Lua de Mel").first()
+    romantico = Category.query.filter_by(name="Romântico").first()
+    if lua_de_mel is not None and romantico is not None:
+        keyword_romantico = CategoryKeyword.query.filter_by(
+            category_id=lua_de_mel.id, keyword="romântico"
+        ).first()
+        if keyword_romantico is not None:
+            keyword_romantico.category_id = romantico.id
+
+    noivos = Category.query.filter_by(name="Noivos").first()
+    if noivos is not None:
+        keyword_casamento = CategoryKeyword.query.filter_by(
+            category_id=noivos.id, keyword="casamento", active=True
+        ).first()
+        if keyword_casamento is not None:
+            keyword_casamento.active = False
+
+    db.session.commit()
+
+
 def run():
     """Popula CategoryKeyword a partir de CATEGORY_KEYWORDS.
 
     Idempotente: pula combinações category_id + keyword já existentes,
     então pode ser rodado quantas vezes for necessário. Categorias não
     encontradas pelo nome exato são avisadas e puladas, sem interromper
-    o script.
+    o script. Antes disso, aplica correções de dado (ver
+    _apply_corrections).
     """
+    _apply_corrections()
+
     criadas = 0
     puladas = 0
     for category_name, keywords in CATEGORY_KEYWORDS.items():

@@ -53,8 +53,10 @@ CATEGORIES = [
      "always_apply": False, "manual_only": False, "suggestion_priority": 11},
     {"name": "ALL Limitless", "scope": "guest", "group_number": 3,
      "always_apply": False, "manual_only": False, "suggestion_priority": 11},
-    {"name": "Lua de Mel/Romântico", "scope": "stay", "group_number": 4,
-     "always_apply": False, "manual_only": False, "suggestion_priority": 12},
+    {"name": "Lua de Mel", "scope": "stay", "group_number": 4,
+     "always_apply": False, "manual_only": False, "suggestion_priority": 4},
+    {"name": "Romântico", "scope": "stay", "group_number": 4,
+     "always_apply": False, "manual_only": False, "suggestion_priority": 4},
     {"name": "ALL Platinum", "scope": "guest", "group_number": 2,
      "always_apply": False, "manual_only": False, "suggestion_priority": 13},
     {"name": "Atenção Especial", "scope": "stay", "group_number": 1,
@@ -64,8 +66,8 @@ CATEGORIES = [
      "opera_rate_code": "ACO"},
     {"name": "Influencer", "scope": "guest", "group_number": 3,
      "always_apply": False, "manual_only": False, "suggestion_priority": 16},
-    {"name": "Casamento", "scope": "stay", "group_number": 4,
-     "always_apply": False, "manual_only": False, "suggestion_priority": 17},
+    {"name": "Noivos", "scope": "stay", "group_number": 4,
+     "always_apply": False, "manual_only": False, "suggestion_priority": 4},
     {"name": "ALL Gold", "scope": "guest", "group_number": 1,
      "always_apply": False, "manual_only": False, "suggestion_priority": 18},
     {"name": "C-Suite", "scope": "guest", "group_number": 2,
@@ -75,13 +77,36 @@ CATEGORIES = [
 ]
 
 
+def _apply_renames():
+    """Corrige nomes de categorias já existentes no banco, antes do
+    upsert padrão por nome (que criaria uma categoria nova em vez de
+    renomear). Decisão de 2026-09-14 (decision-log.md, "Divisão de
+    'Lua de Mel/Romântico' em Noivos, Lua de Mel e Romântico").
+
+    Idempotente: se a categoria com o nome antigo não existir mais
+    (já foi renomeada em execução anterior), não faz nada.
+    """
+    renomeacoes = {
+        "Casamento": "Noivos",
+        "Lua de Mel/Romântico": "Lua de Mel",
+    }
+    for nome_antigo, nome_novo in renomeacoes.items():
+        categoria = Category.query.filter_by(name=nome_antigo).first()
+        if categoria is not None:
+            categoria.name = nome_novo
+    db.session.commit()
+
+
 def run():
     """Insere ou atualiza as categorias definidas em CATEGORIES.
 
     Idempotente: identifica categorias existentes pelo campo `name` e
     atualiza os campos em vez de duplicar, então pode ser rodado
-    quantas vezes for necessário.
+    quantas vezes for necessário. Antes disso, aplica renomeações de
+    categorias já existentes (ver _apply_renames).
     """
+    _apply_renames()
+
     criadas = 0
     atualizadas = 0
     for dados in CATEGORIES:
