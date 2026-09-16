@@ -2284,3 +2284,24 @@ risco de falso positivo silencioso, agravado pelo caso concreto
 "vip" dentro de "vipagem" (termo interno de uso corriqueiro nas notas).
 
 **Status:** Aprovado.
+
+## [2026-09-14] Novas keywords para "Atenção Especial": "atenção especial" e "vipagem"
+
+**Contexto:** decisão de 2026-08-06 fechou "vip" e "mimo" como termos
+genéricos que disparam Atenção Especial quando não acompanhados de
+keyword mais específica na mesma nota. Juliana identificou dois termos
+adicionais de uso comum nas notas: a própria frase "atenção especial",
+e "vipagem" — termo interno usado pela equipe de Guest Relations para
+descrever a rotina de trabalho em si. Uma nota que menciona "vipagem"
+sem especificar o motivo é, na prática, um pedido genérico que precisa
+de revisão humana — mesmo perfil de "vip"/"mimo" isolados. Reconciliação
+por busca literal (2026-09-14) confirmou: nenhuma decisão anterior
+associa "atenção especial" ou "vipagem" a keyword de categoria diferente.
+
+**Decisão:** adicionar "atenção especial" e "vipagem" à lista de
+keywords da categoria Atenção Especial (id 22), com o mesmo
+comportamento de descarte por nota já vigente (decisão de 2026-09-12,
+item 5): se a mesma nota também bater com categoria mais específica,
+Atenção Especial é descartada só naquela nota.
+
+**Status:** Aprovado.

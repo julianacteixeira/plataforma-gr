@@ -50,7 +50,7 @@ CATEGORY_KEYWORDS = {
         "aniversário+casamento",
     ],
     "Voucher Novos Colaboradores": ["voucher novos colaboradores"],
-    "Atenção Especial": ["vip", "mimo"],
+    "Atenção Especial": ["vip", "mimo", "atenção especial", "vipagem"],
     "Comemorações": ["comemoração", "celebração", "formatura", "aposentadoria"],
     "Vip Eventos": [
         "vip eventos", "evento vip", "cliente de eventos",
