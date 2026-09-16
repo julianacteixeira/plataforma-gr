@@ -128,12 +128,45 @@ titularidade) gerou nota SISTEMA com order_by=1 e texto correto
 registrando a mudança de hóspede.
 
 O desenho técnico da Fatia 4 (StayBadge via keyword) foi fechado em
-2026-09-12 (decision-log.md, "[2026-09-12] Fatia 4 — StayBadge via
-keyword: desenho técnico unificado"). A migração de schema
-correspondente (3 colunas novas em StayBadge: matched_keyword,
-matched_note_type, origin_missing) foi aplicada em 2026-09-14 (commit
-d38ff75). A função stay_badge_upsert em si ainda não foi escrita —
-por enquanto só o schema existe.
+2026-09-12 (decision-log.md). A Fatia 4a (detecção de categoria por
+keyword em notas) foi CONCLUÍDA em 2026-09-14: função
+detect_categories_in_notes implementada em
+app/integrations/opera_cloud/keyword_detection.py (busca por nota
+individual, combinação "+", descarte de Atenção Especial por nota,
+correspondência por borda de palavra — commits 479be27, 1a96ee7).
+Nesta mesma sessão, uma divisão de categoria motivada pelo teste da 4a
+foi implementada: "Casamento" virou "Noivos", "Lua de Mel/Romântico"
+foi dividida em "Lua de Mel" e "Romântico" (categoria nova, id 30),
+com keywords novas e prioridades ajustadas (commit 9f176a6). Keywords
+novas também adicionadas a Atenção Especial ("atenção especial",
+"vipagem", commit 1a96ee7).
+
+A Fatia 4b (resolução do titular no vínculo de roommates) está EM
+INVESTIGAÇÃO, sem código escrito ainda. Descobertas desta sessão:
+- Nem a função de agrupamento de roommates (regra híbrida de
+  sobreposição, decision-log 2026-09-11) nem a de stay_count
+  (decision-log 2026-08-28) têm código implementado — ambas são só
+  decisões registradas até agora.
+- Levantado um caso não coberto pelas decisões existentes: reservas
+  SEM room_number atribuído ainda podem ter roommate (ex: titular
+  reserva para si e o cônjuge, quarto só será definido depois). Nesse
+  caso, o único sinal técnico disponível é SHARE_NAMES (nunca
+  persistido, uso só transiente em memória — LGPD).
+- Um script de teste (fora do repositório, em
+  %TEMP%\share_names_test.py) foi escrito para medir a taxa real de
+  correspondência entre SHARE_NAMES e FULL_NAME_NO_SHR_IND, em duas
+  passadas: Passada A (auditoria dentro do próprio quarto) e Passada B
+  (simulação sem saber o quarto, usando a Passada A como gabarito).
+  AINDA NÃO FOI EXECUTADO contra arquivo real — falta o caminho do
+  arquivo XML real no computador da usuária.
+- PENDENTE, NÃO REGISTRADO NO DECISION-LOG AINDA: uma decisão de
+  terminologia foi discutida e redigida ("roommates" = vínculo de um
+  quarto só, já oficial desde 2026-09-11; "grupo de quartos" = conceito
+  futuro não modelado, para múltiplos quartos relacionados por evento)
+  mas o prompt para registrá-la nunca chegou a ser executado nesta
+  sessão — não está no arquivo, não está commitado. Precisa ser
+  registrada na próxima sessão, ou descartada se não fizer mais
+  sentido.
 
 ## O que já existe
 
@@ -243,11 +276,13 @@ decision-log.md, as duas entradas de 2026-08-26.
 - Qualquer protótipo no Figma Make.
 - A pasta app/integrations/ — Frente 3 em andamento: parser.py (Fatia 1),
   guest_upsert.py (Fatia 2 e 2b), reservation_upsert.py (Fatia 3)
-  implementados e testados manualmente. Fatia 4 (StayBadge via keyword):
-  desenho fechado e schema aplicado (colunas matched_keyword,
-  matched_note_type, origin_missing em StayBadge, commit d38ff75) —
-  falta escrever a função stay_badge_upsert em si. Falta também a
-  orquestração completa do import com ImportLog/ImportError (Fatia 5+).
+  implementados e testados manualmente. Fatia 4a (detecção por
+  keyword): CONCLUÍDA — ver "Fase atual" acima. Fatia 4b (resolução de
+  titular em vínculo de roommates): em investigação, nenhuma função
+  escrita ainda (nem agrupamento de roommates, nem stay_count). Falta
+  também Fatia 4c (criação do StayBadge), 4d (badge órfão), 4e
+  (integração), e a orquestração completa do import com
+  ImportLog/ImportError (Fatia 5+).
 - Exportação em XLSX.
 - Memorando: só o schema existe (models + migração c4572c5bb013). Nenhuma
   rota, formulário, lógica de geração, cálculo de agregação por setor +
