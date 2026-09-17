@@ -2305,3 +2305,26 @@ item 5): se a mesma nota também bater com categoria mais específica,
 Atenção Especial é descartada só naquela nota.
 
 **Status:** Aprovado.
+
+## [2026-09-17] Terminologia: "roommates" (um quarto) vs. "grupo de quartos" (futuro, não modelado)
+
+**Contexto:** a decisão de 2026-09-11 definiu a regra híbrida de
+agrupamento de reservas que dividem o mesmo quarto — termo adotado
+para esse vínculo: "roommates". Ao planejar a Fatia 4b, identificou-se
+risco de confusão com um conceito diferente e ainda não modelado:
+múltiplos quartos relacionados a um mesmo evento (ex.: vários quartos
+reservados para um grupo de casamento), que não são necessariamente o
+mesmo quarto físico. Sem registrar essa distinção, o termo "roommates"
+poderia ser usado incorretamente para descrever esse segundo caso, ou
+o segundo caso poderia ser tratado como já coberto pela regra de
+2026-09-11 quando não está.
+
+**Decisão:** fixar "roommates" como termo exclusivo para o vínculo
+entre reservas que compartilham o mesmo `room_number` (regra híbrida,
+decisão de 2026-09-11). "Grupo de quartos" fica reservado para o
+conceito futuro de múltiplos quartos relacionados por evento — esse
+conceito não possui modelagem, tabela, nem lógica implementada até o
+momento desta entrada, e não deve ser confundido com "roommates" em
+código, documentação ou nomes de função.
+
+**Status:** Aprovado.
