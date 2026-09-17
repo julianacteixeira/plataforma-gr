@@ -2328,3 +2328,78 @@ momento desta entrada, e não deve ser confundido com "roommates" em
 código, documentação ou nomes de função.
 
 **Status:** Aprovado.
+
+## [2026-09-17] Resolucao de vinculo por SHARE_NAMES quando room_number ainda nao esta atribuido
+
+**Contexto:** a decisao de 2026-09-11 (regra hibrida de roommates)
+assume que o room_number ja esta definido. Foi identificado um caso
+real nao coberto: titular reserva para si e o conjuge, e o quarto so e
+definido posteriormente. Um script de medicao (share_names_test.py,
+fora do repositorio, sem dados reais expostos ao agente) foi rodado
+contra um arquivo RES_DETAIL real, comparando SHARE_NAMES x
+FULL_NAME_NO_SHR_IND em duas passadas: Passada A (auditoria dentro do
+proprio quarto, usada como gabarito) e Passada B (simulacao sem saber
+o quarto). Resultado no nivel de normalizacao 2 (mesmo nivel usado na
+decisao de 2026-09-11): dos pares com gabarito utilizavel (571),
+86.2% tiveram acerto exato de um unico candidato, 13.8% resultaram em
+ambiguidade (mais de um candidato plausivel, sem forma de desempate
+so com esse campo), 0% de erro (nunca apontou para o par errado) e
+0% de "nao encontrado".
+
+**Revisao explicita da decisao de 2026-09-11 quanto a SHARE_NAMES como
+mecanismo primario:** a decisao de 2026-09-11 rejeitou o uso de
+SHARE_NAMES como mecanismo primario de vinculo, citando taxa de
+correspondencia exata de ~75% apos normalizacao de acentos/caixa/
+espacos, insuficiente para confianca automatica. A metodologia exata
+dessa medicao nao ficou registrada (nenhum script associado citado na
+entrada), o que impede reconciliacao por comparacao direta de codigo.
+Hipotese nao verificada, mas consistente com o texto original: como a
+propria entrada de 2026-09-11 cita espacamento apos virgula e sufixo de
+tratamento (",Mr.") como fontes de inconsistencia, e essas duas coisas
+sao tratadas explicitamente pela normalizacao de nivel 2 usada na
+medicao atual, e provavel que a normalizacao usada em 2026-09-11 nao as
+neutralizasse. Isso e consistente com o salto observado: a Passada A da
+medicao atual (mesma pergunta de 2026-09-11 -- correspondencia direta
+dentro do quarto) chega a 94.5% no nivel 2, ante os ~75% anteriores.
+
+Alem da normalizacao, a pergunta medida tambem mudou: a Passada B nao
+mede taxa de correspondencia textual bruta, e sim, entre os pares com
+correspondencia ja confirmada dentro do quarto (gabarito da Passada A),
+se uma busca no arquivo inteiro (sem saber o quarto) aponta um unico
+candidato, mais de um, ou erra. Por usar apenas correspondencia exata,
+o mecanismo nunca aponta um candidato errado -- falha apenas por
+ambiguidade, nunca por falso positivo silencioso. Essa propriedade (0%
+de erro observado, ambiguidade sempre detectavel) e o que muda a
+conclusao: 2026-09-11 rejeitou o uso automatico por risco de vinculo
+errado silencioso; a medicao atual mostra que, com correspondencia
+exata e revisao manual para ambiguidade, esse risco especifico nao se
+aplica.
+
+Diante disso, esta entrada REVISA a decisao de 2026-09-11 neste ponto
+especifico: o uso de SHARE_NAMES como mecanismo primario de vinculo
+automatico, antes rejeitado, passa a ser permitido nos casos em que
+room_number ainda nao esta atribuido -- restrito a correspondencia
+exata (nivel 2) e apenas quando resolve a um unico candidato; casos
+ambiguos continuam sem resolucao automatica. O restante da decisao de
+2026-09-11 (SHARE_NAMES nao e importado nem persistido como texto;
+regra hibrida de sobreposicao para roommates; terminologia
+share/roommates) permanece integralmente valido e nao e afetado por
+esta revisao.
+
+**Decisao:** quando SHARE_NAMES aponta exatamente um candidato
+compativel, o vinculo e resolvido automaticamente. Quando aponta mais
+de um candidato (caso de ambiguidade), o sistema NAO decide sozinho —
+a reserva fica marcada para revisao manual, sem vinculo automatico
+criado. Esta e uma decisao de comportamento distinta da funcao
+group_roommates() (decisao de 2026-09-11), que opera apenas sobre
+reservas ja agrupadas por room_number; a resolucao por SHARE_NAMES
+atua antes desse agrupamento, como um problema separado.
+
+**Alternativa considerada:** nao resolver nenhum caso automaticamente,
+sempre exigindo revisao manual quando nao ha room_number. Rejeitada
+porque a taxa de erro medida foi 0% e a ambiguidade e sempre
+detectavel (nunca silenciosa) — o fallback manual so entra exatamente
+onde o dado e insuficiente, entao a resolucao automatica dos 86.2%
+restantes nao representa risco adicional identificado.
+
+**Status:** Aprovado.
