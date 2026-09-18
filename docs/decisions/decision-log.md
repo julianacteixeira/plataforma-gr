@@ -2403,3 +2403,63 @@ onde o dado e insuficiente, entao a resolucao automatica dos 86.2%
 restantes nao representa risco adicional identificado.
 
 **Status:** Aprovado.
+
+## [2026-09-18] Desenho de resolve_share_names_links: reciprocidade obrigatoria e modulo de normalizacao compartilhado
+
+**Contexto:** a decisao de 2026-09-17 (revisao de 2026-09-11) permitiu
+usar SHARE_NAMES como mecanismo primario de vinculo quando
+room_number ainda nao esta atribuido, restrito a correspondencia
+exata (nivel 2) e apenas quando resolve a um unico candidato. Faltava
+definir: (a) o universo de busca de candidatos; (b) o comportamento
+quando SHARE_NAMES cita mais de um nome (grupos de 3+); (c) se a
+citacao precisa ser reciproca. Confirmado com a Juliana: nos dados
+reais do Opera, quando SHARE_NAMES esta preenchido, os dois lados do
+vinculo sempre se citam mutuamente (citacao cruzada).
+
+**Decisao:**
+1. Busca de candidatos restrita a reservas que tambem estao sem
+   room_number (nao ha como atribuir quarto a apenas uma pessoa de um
+   vinculo ainda nao formado).
+2. Quando SHARE_NAMES cita mais de um nome (grupos de 3+ -- 28 dos
+   842 casos preenchidos no arquivo RES_DETAIL analisado em
+   2026-09-17, ou seja, uma AMOSTRA de um arquivo especifico, nao uma
+   constante do sistema), cada nome e resolvido individualmente. O
+   grupo so e considerado resolvido automaticamente se TODOS os nomes
+   citados resolverem para candidatos unicos -- nao ha limite de
+   tamanho de grupo, apenas exigencia de que cada nome resolva
+   sozinho.
+3. Reciprocidade obrigatoria: um nome citado resolve automaticamente
+   apenas quando (a) aponta para exatamente 1 candidato E (b) esse
+   candidato tambem cita de volta a reserva original em seu proprio
+   SHARE_NAMES, tambem resolvendo para exatamente 1 candidato. Falha
+   de reciprocidade (candidato unico de um lado, mas sem citacao de
+   volta, ou citando outra pessoa) e tratada na MESMA categoria de
+   pendencia manual que ambiguidade por multiplos candidatos -- nao
+   cria categoria separada, pois o tratamento operacional (revisao
+   humana) e o mesmo.
+4. As tres funcoes de normalizacao (niveis 1, 2 e 3), hoje existentes
+   apenas no script temporario share_names_test.py (fora do
+   repositorio), serao portadas para um modulo novo e compartilhavel:
+   app/integrations/opera_cloud/name_normalization.py -- evita
+   duplicacao de logica entre resolve_share_names_links e futuras
+   funcoes que tambem precisem comparar nomes (ex.: group_roommates()).
+5. Funcao principal: resolve_share_names_links(reservations,
+   share_names_by_code), em
+   app/integrations/opera_cloud/share_names_linking.py. Recebe
+   reservations ja filtrada (sem room_number) por quem chama, e
+   share_names_by_code como dicionario transiente {reservation_code:
+   texto_bruto}, nunca persistido -- mantem SHARE_NAMES fora de
+   ReservaParseada, conforme decisao de 2026-09-17. Devolve tres
+   categorias: grupos resolvidos, grupos pendentes de revisao,
+   reservas sem SHARE_NAMES.
+
+**Nota sobre as porcentagens citadas nesta e em entradas anteriores
+(2026-09-17):** todos os numeros (86.2%, 13.8%, 94.5%, 3.3%, etc.)
+vem de UMA medicao contra UM arquivo RES_DETAIL real especifico
+(res_detail_53705137.XML, 1050 reservas), rodada em 2026-09-17. Sao
+evidencia empirica que embasou as decisoes acima, nao constantes
+validadas do sistema nem garantia estatistica sobre arquivos futuros.
+Nao devem ser citadas em conversas futuras como taxa esperada ou
+comportamento garantido do Opera Cloud, sem nova medicao.
+
+**Status:** Aprovado.
