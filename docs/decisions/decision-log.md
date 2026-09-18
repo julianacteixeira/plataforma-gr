@@ -2463,3 +2463,41 @@ Nao devem ser citadas em conversas futuras como taxa esperada ou
 comportamento garantido do Opera Cloud, sem nova medicao.
 
 **Status:** Aprovado.
+
+## [2026-09-18] Estrutura de saida de resolve_share_names_links: motivo da pendencia e regra de disputa de candidato
+
+**Contexto:** definido o desenho geral de resolve_share_names_links
+(decisao de 2026-09-18, entrada anterior), faltava fechar o formato
+exato de saida da funcao e dois comportamentos de borda: (a) se o
+motivo de uma reserva cair em pendencia deve ser registrado, alem da
+categoria em si; (b) o que fazer quando duas reservas diferentes
+citam o mesmo candidato em SHARE_NAMES, de forma que o candidato seria
+reivindicado por dois grupos distintos ao mesmo tempo (inconsistencia
+de dado que a exigencia de reciprocidade normalmente evita, mas nao
+impede por completo).
+
+**Decisao:**
+1. A saida da funcao e representada por tres dataclasses:
+   ResolvedLink (lista de reservation_codes de um grupo resolvido),
+   PendingLink (reservation_code + reason) e ShareNamesResolution
+   (resolved: list[ResolvedLink], pending_review: list[PendingLink],
+   without_share_names: list[str]). Nenhuma das estruturas guarda
+   nome de hospede -- apenas reservation_code, conforme decisao de
+   2026-09-11 (exibicao de vinculo na interface usa Guest.full_name
+   de cada reserva do grupo, nunca le SHARE_NAMES diretamente).
+2. PendingLink inclui o campo reason (rotulo tecnico interno, ex.:
+   "ambiguous" ou "no_reciprocity") para apoiar quem for revisar
+   manualmente a entender rapido o motivo, sem criar categoria de
+   saida separada -- o tratamento operacional continua sendo o mesmo
+   (revisao manual), conforme ja decidido.
+3. Regra de disputa de candidato: se duas reservas distintas citam
+   (direta ou indiretamente, apos resolucao individual por nome) o
+   mesmo candidato como parte de seus respectivos grupos, NENHUM dos
+   grupos envolvidos e considerado resolvido automaticamente -- todas
+   as reservas dos grupos em disputa caem em pending_review (reason
+   correspondente a essa situacao, ex.: "candidate_conflict"). Uma
+   reserva nao pode pertencer a dois vinculos automaticos ao mesmo
+   tempo, e nao ha como determinar qual dos dois e correto sem revisao
+   humana.
+
+**Status:** Aprovado.
