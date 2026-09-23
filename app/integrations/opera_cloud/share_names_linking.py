@@ -11,7 +11,7 @@ Decisoes que governam este modulo:
 - 2026-09-18 (desenho): busca restrita a reservas sem room_number;
   resolucao por nome individual; reciprocidade obrigatoria.
 - 2026-09-18 (estrutura): saida em tres categorias; PendingLink
-  carrega o motivo; disputa de candidato joga todos os grupos
+  carrega o motivo; disputa de candidato joga todos os vinculos
   envolvidos para revisao manual.
 
 Nenhum nome de hospede e retornado por este modulo -- apenas
@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 
 from app.integrations.opera_cloud.name_normalization import normalize_level2
 
-# Motivos de pendencia (rotulos tecnicos internos, nao exibidos cruis
+# Motivos de pendencia (rotulos tecnicos internos, nao exibidos crus
 # ao usuario final -- a interface traduz para portugues quando for o
 # caso).
 REASON_AMBIGUOUS = "ambiguous"
@@ -32,8 +32,9 @@ REASON_CANDIDATE_CONFLICT = "candidate_conflict"
 
 @dataclass
 class ResolvedLink:
-    """Grupo de reservas vinculado automaticamente com seguranca: cada
-    nome citado resolveu para 1 candidato e a citacao foi reciproca."""
+    """Vinculo de reservas resolvido automaticamente com seguranca: cada
+    nome citado resolveu para 1 candidato, a citacao foi reciproca e
+    cada reserva cita todas as demais do vinculo."""
     reservation_codes: list[str]
 
 
