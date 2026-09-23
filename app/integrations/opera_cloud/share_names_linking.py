@@ -132,57 +132,67 @@ def resolve_share_names_links(
             targets_by_code[code] = targets
 
     # ---------------------------------------------------------------
-    # Segunda passagem: reciprocidade e disputa de candidato.
+    # Segunda passagem: reciprocidade, repetida ate estabilizar.
     # ---------------------------------------------------------------
-    # Disputa: mesmo alvo reivindicado por mais de uma reserva.
-    claimers_by_target: dict[str, set[str]] = {}
-    for code, targets in targets_by_code.items():
-        for target in targets:
-            claimers_by_target.setdefault(target, set()).add(code)
-
-    conflicted: set[str] = set()
-    for target, claimers in claimers_by_target.items():
-        if len(claimers) > 1:
-            conflicted.add(target)
-            conflicted.update(claimers)
-
-    for code in list(targets_by_code):
-        if code in conflicted:
-            failed_by_code[code] = REASON_CANDIDATE_CONFLICT
-            del targets_by_code[code]
-
-    # Reciprocidade: A aponta B exige que B aponte A de volta.
-    for code in list(targets_by_code):
-        targets = targets_by_code[code]
-        reciprocal = all(
-            target in targets_by_code and code in targets_by_code[target]
-            for target in targets
-        )
-        if not reciprocal:
-            failed_by_code[code] = REASON_NO_RECIPROCITY
-            del targets_by_code[code]
+    # A aponta B so vale se B tambem aponta A. Remover uma reserva
+    # pode quebrar a reciprocidade de outra que apontava para ela, por
+    # isso a checagem se repete ate uma volta inteira sem remocoes.
+    changed = True
+    while changed:
+        changed = False
+        for code in sorted(targets_by_code):
+            targets = targets_by_code[code]
+            reciprocal = all(
+                target in targets_by_code and code in targets_by_code[target]
+                for target in targets
+            )
+            if not reciprocal:
+                failed_by_code[code] = REASON_NO_RECIPROCITY
+                del targets_by_code[code]
+                changed = True
 
     # ---------------------------------------------------------------
-    # Monta os grupos resolvidos.
+    # Terceira passagem: monta os vinculos por fecho transitivo.
     # ---------------------------------------------------------------
-    # Apos os filtros acima, o que resta e mutuamente consistente.
-    # Agrupa por fecho transitivo: se A<->B e B<->C, o grupo e {A,B,C}.
-    grouped: set[str] = set()
+    # Se A<->B e B<->C, o vinculo e {A, B, C}.
+    links: list[set[str]] = []
+    visited: set[str] = set()
     for code in sorted(targets_by_code):
-        if code in grouped:
+        if code in visited:
             continue
-        group = {code}
+        link = {code}
         to_visit = [code]
         while to_visit:
             current = to_visit.pop()
             for target in targets_by_code.get(current, set()):
-                if target not in group:
-                    group.add(target)
+                if target not in link:
+                    link.add(target)
                     to_visit.append(target)
-        grouped.update(group)
-        result.resolved.append(
-            ResolvedLink(reservation_codes=sorted(group))
+        visited.update(link)
+        links.append(link)
+
+    # ---------------------------------------------------------------
+    # Quarta passagem: disputa de candidato entre vinculos distintos.
+    # ---------------------------------------------------------------
+    # O fecho transitivo junta num mesmo conjunto tudo que esta ligado.
+    # Por isso, quando um candidato e reivindicado por dois vinculos
+    # distintos, eles aparecem aqui FUNDIDOS num conjunto so. O sinal
+    # da disputa e o conjunto nao ser completo: num vinculo legitimo,
+    # cada reserva cita todas as outras do mesmo vinculo. Se alguma
+    # reserva nao cita exatamente "todas as demais", o conjunto inteiro
+    # vai para revisao manual (decisao de 2026-09-18, estrutura).
+    for link in links:
+        is_complete = all(
+            targets_by_code[code] == link - {code}
+            for code in link
         )
+        if is_complete:
+            result.resolved.append(
+                ResolvedLink(reservation_codes=sorted(link))
+            )
+        else:
+            for code in link:
+                failed_by_code[code] = REASON_CANDIDATE_CONFLICT
 
     for code, reason in sorted(failed_by_code.items()):
         result.pending_review.append(
