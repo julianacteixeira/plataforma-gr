@@ -69,27 +69,32 @@ O desenho técnico da Fatia 4 foi fechado em 2026-09-12. A Fatia 4a
 current-state.md para detalhes completos, incluindo a divisão de
 categoria Noivos/Lua de Mel/Romântico feita na mesma sessão).
 
-PRÓXIMO PASSO CONCRETO: Fatia 4b — resolução do titular no vínculo de
-roommates. Três itens em aberto antes de escrever a função
-group_roommates:
-1. Rodar o script %TEMP%\share_names_test.py (fora do repositório)
-   contra um arquivo RES_DETAIL real, para decidir se SHARE_NAMES pode
-   servir de mecanismo de vínculo quando a reserva ainda não tem
-   room_number atribuído (caso identificado nesta sessão, não coberto
-   pela decisão de 2026-09-11, que assume quarto já definido).
-2. Registrar a decisão de terminologia "roommates" vs. "grupo de
-   quartos" no decision-log.md (texto já redigido na conversa da
-   sessão anterior, nunca commitado).
-3. Escrever app/integrations/opera_cloud/roommates.py, função
-   group_roommates(reservations) — recebe reservas já filtradas pelo
-   mesmo room_number, aplica a regra híbrida de sobreposição (decisão
-   de 2026-09-11: inclusiva quando há reserva de 0 diária, estrita
-   caso contrário), exclui reservas CXL (decisão de 2026-09-12, item
-   7), agrupa por componente conexo (não só pares — vínculos de 3+
-   existem no fixture sintético).
+Fatia 4b — EM ANDAMENTO (atualizado em 2026-09-24). Os três itens que
+estavam em aberto em 2026-09-14 foram concluídos: a medição de
+SHARE_NAMES foi feita e virou decisão (2026-09-17), a terminologia
+roommates vs. grupo de quartos foi registrada (commit 5745713), e
+resolve_share_names_links foi implementada, corrigida e validada
+(commits 5fbc56d, 355bfb7, 7dd484c, 7fa621c; decision-log, três
+entradas de 2026-09-24). Ver current-state.md.
+
+PRÓXIMO PASSO CONCRETO: escrever app/integrations/opera_cloud/roommates.py,
+função group_roommates(reservations) — recebe reservas já filtradas
+pelo mesmo room_number, aplica a regra híbrida de sobreposição (decisão
+de 2026-09-11: inclusiva quando há reserva de 0 diária, estrita caso
+contrário), exclui reservas CXL (decisão de 2026-09-12, item 7) e
+agrupa por componente conexo, nunca só por pares. O gabarito do teste
+cego de 2026-09-24 encontrou vínculos de 3 e também de 4 reservas.
 
 Depois de group_roommates: Fatia 4b-ii (regra de titular, decisão de
-2026-09-12 item 6), depois 4c, 4d, 4e.
+2026-09-12 item 6, aplicada sobre os vínculos das duas fontes — por
+quarto e por SHARE_NAMES), depois 4c, 4d, 4e.
+
+Antes da Fatia 4e: decidir o tratamento de Reservation.is_shared após o
+check-out (pendência registrada no decision-log em 2026-09-24).
+
+Ambiente: até esclarecer com a TI o alerta do Cortex XDR (ver
+current-state.md, "Pontos de atenção"), não usar o Claude Code no
+computador do trabalho.
 
 
 

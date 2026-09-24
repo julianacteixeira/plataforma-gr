@@ -1,6 +1,6 @@
 # Estado Atual do Projeto — Plataforma de Guest Relations
 
-**Última atualização:** 2026-09-14
+**Última atualização:** 2026-09-24
 
 ## Fase atual
 
@@ -8,7 +8,8 @@ Backend em construção, sem nenhuma interface. O banco tem 19 tabelas
 aplicadas e a autenticação funciona. A frente ativa é a importação do
 relatório RES_DETAIL do Opera Cloud, dividida em 3 frentes: schema
 (concluída), seed de palavras-chave (concluída) e módulo de importação
-(em andamento — Frente 3, Fatia 0 concluída).
+(em andamento — Frente 3: Fatias 0 a 4a concluídas, Fatia 4b em
+andamento).
 
 O bloqueio registrado em 2026-08-24 — faltavam os nomes de 4 tags do XML
 — foi RESOLVIDO em 2026-08-26 com acesso a um arquivo RES_DETAIL real de
@@ -141,32 +142,42 @@ com keywords novas e prioridades ajustadas (commit 9f176a6). Keywords
 novas também adicionadas a Atenção Especial ("atenção especial",
 "vipagem", commit 1a96ee7).
 
-A Fatia 4b (resolução do titular no vínculo de roommates) está EM
-INVESTIGAÇÃO, sem código escrito ainda. Descobertas desta sessão:
-- Nem a função de agrupamento de roommates (regra híbrida de
-  sobreposição, decision-log 2026-09-11) nem a de stay_count
-  (decision-log 2026-08-28) têm código implementado — ambas são só
-  decisões registradas até agora.
-- Levantado um caso não coberto pelas decisões existentes: reservas
-  SEM room_number atribuído ainda podem ter roommate (ex: titular
-  reserva para si e o cônjuge, quarto só será definido depois). Nesse
-  caso, o único sinal técnico disponível é SHARE_NAMES (nunca
-  persistido, uso só transiente em memória — LGPD).
-- Um script de teste (fora do repositório, em
-  %TEMP%\share_names_test.py) foi escrito para medir a taxa real de
-  correspondência entre SHARE_NAMES e FULL_NAME_NO_SHR_IND, em duas
-  passadas: Passada A (auditoria dentro do próprio quarto) e Passada B
-  (simulação sem saber o quarto, usando a Passada A como gabarito).
-  AINDA NÃO FOI EXECUTADO contra arquivo real — falta o caminho do
-  arquivo XML real no computador da usuária.
-- PENDENTE, NÃO REGISTRADO NO DECISION-LOG AINDA: uma decisão de
-  terminologia foi discutida e redigida ("roommates" = vínculo de um
-  quarto só, já oficial desde 2026-09-11; "grupo de quartos" = conceito
-  futuro não modelado, para múltiplos quartos relacionados por evento)
-  mas o prompt para registrá-la nunca chegou a ser executado nesta
-  sessão — não está no arquivo, não está commitado. Precisa ser
-  registrada na próxima sessão, ou descartada se não fizer mais
-  sentido.
+A Fatia 4b (vínculos de roommates e resolução do titular) está EM
+ANDAMENTO. Já existe:
+- Medição de SHARE_NAMES contra arquivo RES_DETAIL real (2026-09-17,
+  script fora do repositório) e decisão de usá-lo como mecanismo
+  primário de vínculo quando a reserva ainda não tem room_number —
+  restrito a correspondência exata e candidato único (decision-log,
+  2026-09-17, que revisa a decisão de 2026-09-11 nesse ponto).
+- Terminologia registrada: "roommates" = vínculo de um quarto; "grupo
+  de quartos" = conceito futuro não modelado (decision-log, 2026-09-17,
+  commit 5745713).
+- app/integrations/opera_cloud/name_normalization.py (commit 5fbc56d):
+  níveis 1, 2 e 3 de normalização de nome, portados do script de
+  medição; o nível 1 remove também caracteres de formatação invisíveis
+  (categoria Unicode Cf).
+- app/integrations/opera_cloud/share_names_linking.py, função
+  resolve_share_names_links (desenho e estrutura de saída: duas
+  entradas de 2026-09-18 no decision-log). Criada com um bug conhecido
+  (commit 355bfb7) e corrigida em 2026-09-24 (commit 7dd484c):
+  reciprocidade repetida até estabilizar, vínculos por fecho
+  transitivo, disputa de candidato detectada como vínculo incompleto
+  (decision-log, "[2026-09-24] Esclarecimento: regra de disputa de
+  candidato"). Terminologia das docstrings ajustada no commit 7fa621c.
+- Testes: 8 cenários com nomes fictícios (8/8, script fora do
+  repositório) e teste cego contra dois arquivos RES_DETAIL reais, com
+  0 vínculos errados e 0 parciais nos dois (decision-log, "[2026-09-24]
+  Validacao por teste cego"). Regra "tudo ou nada" por vínculo mantida.
+- Achado registrado: o Opera limpa SHARE_NAMES e zera IS_SHARED_YN no
+  check-out (decision-log, "[2026-09-24] Opera limpa SHARE_NAMES e
+  IS_SHARED_YN no check-out").
+
+Ainda NÃO existe: app/integrations/opera_cloud/roommates.py com
+group_roommates() (vínculo por room_number + regra híbrida de
+2026-09-11), nem a função de stay_count (decisão de 2026-08-28). A
+regra de titular (Fatia 4b-ii, decisão de 2026-09-12 item 6) depende
+das duas fontes de vínculo — por quarto e por SHARE_NAMES — e só pode
+ser escrita depois de group_roommates.
 
 ## O que já existe
 
@@ -198,8 +209,13 @@ INVESTIGAÇÃO, sem código escrito ainda. Descobertas desta sessão:
   banco nem contra flask db downgrade da migração.
 
 ### Banco de dados
-Migração corrente: 8301e98c75e9 (head). 17 arquivos de migração em
-migrations/versions.
+Migração corrente: bb9bdfe3679b (head), verificada em 2026-09-24. 20
+arquivos de migração em migrations/versions. Migrações posteriores a
+8301e98c75e9 (updated_at em Reservation):
+- 1a1c9438cfb6 — Reservation.rate_code (commit 7f2a998)
+- 9661f62cc092 — ReservationNote.title (commit fb3ef8a)
+- bb9bdfe3679b — StayBadge.matched_keyword, matched_note_type e
+  origin_missing (commit d38ff75)
 
 20 tabelas no banco (19 do modelo + alembic_version):
 alembic_version, audit_logs, categories, category_item_templates,
@@ -277,9 +293,9 @@ decision-log.md, as duas entradas de 2026-08-26.
 - A pasta app/integrations/ — Frente 3 em andamento: parser.py (Fatia 1),
   guest_upsert.py (Fatia 2 e 2b), reservation_upsert.py (Fatia 3)
   implementados e testados manualmente. Fatia 4a (detecção por
-  keyword): CONCLUÍDA — ver "Fase atual" acima. Fatia 4b (resolução de
-  titular em vínculo de roommates): em investigação, nenhuma função
-  escrita ainda (nem agrupamento de roommates, nem stay_count). Falta
+  keyword): CONCLUÍDA — ver "Fase atual" acima. Fatia 4b: resolve_share_names_links
+  implementada e validada; faltam group_roommates (roommates.py),
+  stay_count e a regra de titular (4b-ii). Falta
   também Fatia 4c (criação do StayBadge), 4d (badge órfão), 4e
   (integração), e a orquestração completa do import com
   ImportLog/ImportError (Fatia 5+).
@@ -326,6 +342,17 @@ fechar o MVP:
 - backlog.md desatualizado: todos os itens de Fundação continuam
   marcados como pendentes, incluindo migrações e login, que estão
   concluídos.
+- Reservation.is_shared é sobrescrito pelo valor do Opera a cada
+  importação, e o Opera zera IS_SHARED_YN no check-out: uma
+  reimportação após o check-out gravaria is_shared = False numa
+  reserva que era compartilhada. Decidir antes da Fatia 4e
+  (decision-log, "[2026-09-24] Opera limpa SHARE_NAMES e IS_SHARED_YN
+  no check-out").
+- Em 2026-09-24, o antivírus corporativo (Cortex XDR) bloqueou uma
+  atividade ("COM Surrogate", ameaça comportamental) ao abrir o Claude
+  Code no computador do trabalho. Até esclarecer com a TI, não usar o
+  Claude Code nessa máquina; Git pelo PowerShell e edição no VS Code
+  seguem funcionando. Nenhum chamado aberto até esta data.
 
 ## Como retomar o trabalho
 
