@@ -2501,3 +2501,130 @@ impede por completo).
    humana.
 
 **Status:** Aprovado.
+
+## [2026-09-24] Esclarecimento: regra de disputa de candidato e deteccao por vinculo incompleto
+
+**Contexto:** o item 3 da entrada "[2026-09-18] Estrutura de saida de
+resolve_share_names_links" define a disputa como "duas reservas
+distintas" citando o mesmo candidato, enquanto o paragrafo de contexto
+da mesma entrada fala em candidato "reivindicado por dois grupos
+distintos". A primeira implementacao (commit 355bfb7) seguiu a leitura
+"duas reservas" e passou a rejeitar vinculos legitimos de 3+ reservas,
+em que dois membros citam o mesmo terceiro.
+
+**Decisao:** esta entrada revisa a decisao de 2026-09-18 (estrutura),
+item 3, neste ponto: disputa de candidato significa um candidato
+reivindicado por dois VINCULOS distintos, nao por duas reservas. Como o
+fecho transitivo junta num mesmo conjunto tudo que esta ligado, dois
+vinculos que disputam um candidato aparecem fundidos num conjunto so. A
+disputa e detectada assim, nesta ordem:
+1. reciprocidade, repetida ate uma volta inteira sem remocoes (remover
+   uma reserva pode quebrar a reciprocidade de outra);
+2. montagem dos vinculos por fecho transitivo;
+3. checagem de completude: num vinculo legitimo, cada reserva cita
+   todas as demais do mesmo vinculo. Se alguma nao cita exatamente
+   "todas as demais", o conjunto inteiro vai para pending_review com
+   reason "candidate_conflict".
+
+Consequencia: se A e D citam X, mas X cita apenas A de volta, nao ha
+disputa -- D cai por "no_reciprocity" e o vinculo {A, X} e resolvido.
+
+Implementado no commit 7dd484c. Validado com 8 cenarios de nomes
+ficticios (par, trio, ambiguidade, falta de reciprocidade, disputa,
+reciprocidade parcial do candidato, cascata de reciprocidade, corrente
+incompleta A-B-C): 8/8.
+
+**Terminologia:** as duas entradas de 2026-09-18 usam "grupo" no
+sentido de vinculo de um quarto. Devem ser lidas como "vinculo
+(roommates)", conforme a entrada "[2026-09-17] Terminologia". O texto
+antigo nao e editado.
+
+**Status:** Aprovado.
+
+## [2026-09-24] Opera limpa SHARE_NAMES e IS_SHARED_YN no check-out
+
+**Contexto:** analise do arquivo RES_DETAIL real res_detail_53811811.XML
+(121 reservas), observada numa sessao anterior e reconferida por script
+(contagens agregadas, sem dado de hospede exposto).
+
+**Evidencia:**
+- 68 reservas com status CKOT: 0 com SHARE_NAMES preenchido e 0 com
+  IS_SHARED_YN = "Y".
+- As mesmas 68 pertencem a um vinculo real pelo gabarito (mesmo
+  ROOM_NO + sobreposicao hibrida de 2026-09-11, sem CXL) -- ou seja,
+  dividiam quarto e perderam os dois campos.
+- Reservas nao finalizadas (nem CKOT nem CXL): 44 de 53 com
+  SHARE_NAMES (83,0%).
+
+**Decisao / registro:** o Opera limpa SHARE_NAMES e zera IS_SHARED_YN no
+check-out. Ausencia desses campos numa reserva CKOT nao indica ausencia
+de vinculo.
+
+**Consequencias:**
+1. resolve_share_names_links nao e afetada: atua apenas em reservas sem
+   room_number (futuras), que nao estao em check-out.
+2. Para capturar vinculo via SHARE_NAMES, a importacao precisa ocorrer
+   antes do check-out.
+3. O vinculo por quarto (regra hibrida) continua funcionando apos o
+   check-out, pois ROOM_NO permanece.
+
+**Pendencia registrada (nao decidida aqui):** Reservation.is_shared
+(decisao de 2026-08-26) e sobrescrito pelo valor do Opera a cada
+importacao. Uma reimportacao apos o check-out gravaria is_shared = False
+numa reserva que era compartilhada, sem erro visivel. Decidir, antes da
+Fatia 4e (integracao), se is_shared deve deixar de ser rebaixado de True
+para False quando o status for CKOT.
+
+**Reconciliacao:** complementa as decisoes de 2026-08-26 e 2026-09-17;
+nao revisa nenhuma delas. Numeros especificos deste arquivo, nao
+constantes do sistema (ver nota em 2026-09-18).
+
+**Status:** Aprovado.
+
+## [2026-09-24] Validacao por teste cego de resolve_share_names_links e manutencao da regra "tudo ou nada"
+
+**Contexto:** apos a correcao da regra de disputa (commit 7dd484c), o
+teste cego foi refeito com o codigo commitado, para que o registro
+descreva o codigo que existe, e nao uma versao intermediaria.
+
+**Metodo:** room_number escondido de todas as reservas nao-CXL; funcao
+real do repositorio executada sobre elas; resultado comparado com o
+gabarito (mesmo ROOM_NO + sobreposicao hibrida, sem CXL). Cada vinculo
+resolvido e classificado como exato, parcial, errado ou "sem gabarito"
+(reservas sem ROOM_NO no proprio arquivo, que nao podem ser conferidas).
+Execucao local, saida apenas agregada.
+
+**Resultados:**
+- res_detail_53811811.XML (121 reservas, 68 CKOT): 43 vinculos reais
+  (20 de 2, 20 de 3, 3 de 4). 10 resolvidos: 10 exatos, 0 parciais,
+  0 errados. Cobertura 10/43 = 23,3%, explicada pela limpeza de
+  SHARE_NAMES no check-out (entrada anterior). Resultado identico ao da
+  medicao da sessao anterior, feita com versao intermediaria da logica.
+- res_detail_54202796.xml (nome informado de memoria, nao conferido;
+  1391 reservas, 0 CKOT): 262 vinculos reais (251 de 2, 10 de 3, 1 de
+  4). 405 resolvidos: 199 exatos, 0 parciais, 0 errados, 206 sem
+  gabarito. Cobertura 199/262 = 76,0%.
+
+Nos dois arquivos: 0 vinculos errados e 0 parciais. Os 206 "sem
+gabarito" sao justamente o caso de uso real da funcao (quarto ainda nao
+atribuido) e nao sao conferiveis por este metodo.
+
+**Decisao:** a regra "tudo ou nada" por vinculo (decisao de 2026-09-18,
+desenho, item 2) e mantida sem mudanca. Uma analise anterior sugeriu
+repensa-la, mas usava gabarito errado (agrupava so por room_number,
+ignorando datas); com o gabarito correto, 0 vinculos parciais nos dois
+arquivos.
+
+**Observacoes:**
+- O gabarito encontrou vinculos de 4 reservas nos dois arquivos. A
+  entrada de 2026-09-11 observou que o vinculo real nunca passava de
+  trio -- essa observacao vale para aquele arquivo especifico. Nao se
+  investigou se os casos de 4 sao quartos reais ou limite da regra
+  hibrida; nao afetam esta validacao (0 parciais).
+- O motivo "ambiguous" agrega dois casos distintos: nome nao encontrado
+  (0 candidatos) e nome ambiguo (2+ candidatos). Separa-los pode ajudar
+  a revisao manual; fica como candidato a decisao futura.
+- Todos os numeros desta entrada sao especificos destes arquivos, nao
+  constantes do sistema.
+
+**Status:** Aprovado.
